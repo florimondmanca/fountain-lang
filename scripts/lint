@@ -5,7 +5,7 @@ if [ -d "venv" ] ; then
     BIN="venv/bin/"
 fi
 
-SOURCE_FILES="src"
+SOURCE_FILES="src tools"
 
 set -x
 

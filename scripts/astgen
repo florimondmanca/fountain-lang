@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+BIN=""
+if [ -d "venv" ] ; then
+  BIN="venv/bin/"
+fi
+
+set -x
+
+${PREFIX}python -m tools.astgen src/fountain/_ast/nodes.py
