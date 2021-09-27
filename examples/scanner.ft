@@ -1,0 +1,15 @@
+(),.  -- Punctuation
+and or not true false  -- Logic keywords
+"hello, world"
+'hello, single quote world'  -- Inline comment
+"hello, multiline
+world"
+13  -- Number, integer
+01  -- Leading zero is ok
+12.54  -- Number, decimal
+name  -- Identifier
+for  -- Keyword
+print(13)  -- Identifier, left parenthesis, number, right parenthesis
+for x in y do  -- For loop with a block
+  print(x)
+end

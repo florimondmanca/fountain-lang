@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+BIN=""
+if [ -d "venv" ] ; then
+    BIN="venv/bin/"
+fi
+
+SOURCE_FILES="src"
+
+set -x
+
+${PREFIX}autoflake --in-place --recursive $SOURCE_FILES
+${PREFIX}isort $SOURCE_FILES
+${PREFIX}black --target-version=py39 $SOURCE_FILES

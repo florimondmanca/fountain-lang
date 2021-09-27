@@ -1,0 +1,15 @@
+#!/bin/sh -e
+
+BIN=""
+if [ -d "venv" ] ; then
+    BIN="venv/bin/"
+fi
+
+SOURCE_FILES="src"
+
+set -x
+
+${BIN}black --check --diff --target-version=py39 $SOURCE_FILES
+${BIN}flake8 $SOURCE_FILES
+${BIN}mypy $SOURCE_FILES
+${BIN}isort --check --diff $SOURCE_FILES
