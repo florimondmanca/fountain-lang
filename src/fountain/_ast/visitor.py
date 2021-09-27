@@ -1,18 +1,67 @@
-from .nodes import Expr
+from typing import Generic, TypeVar
+
+from .nodes import Binary, Expr, Group, Literal, Unary
+
+R = TypeVar("R")
 
 
-class NodeVisitor:
-    def visit(self, node: Expr) -> None:
+class NodeVisitor(Generic[R]):
+    def visit(self, node: Expr) -> R:
         method = getattr(self, f"visit_{node.__class__.__name__}", self.default)
-        method(node)
+        return method(node)
 
-    def default(self, expr: Expr) -> None:
+    def default(self, expr: Expr) -> R:
         raise NotImplementedError(f"Unexpected node: {expr}")
+
+
+class FountainPrinter(NodeVisitor[str]):
+    """
+    Shows an AST as Fountain would require it.
+    """
+
+    def visit_Literal(self, expr: Literal) -> str:
+        if expr.value is None:
+            return "nil"
+        return str(expr.value)
+
+    def visit_Unary(self, expr: Unary) -> str:
+        return expr.op.lexeme + self.visit(expr.right)
+
+    def visit_Binary(self, expr: Binary) -> str:
+        return self.visit(expr.left) + f" {expr.op.lexeme} " + self.visit(expr.right)
+
+    def visit_Group(self, expr: Group) -> str:
+        return "(" + self.visit(expr.expression) + ")"
+
+
+class DebugPrinter(NodeVisitor[str]):
+    """
+    Shows an AST in explicit Lisp-like style, for debugging.
+    """
+
+    def visit_Literal(self, expr: Literal) -> str:
+        if expr.value is None:
+            return "nil"
+        return str(expr.value)
+
+    def visit_Unary(self, expr: Unary) -> str:
+        return f"({expr.op.lexeme} " + self.visit(expr.right) + ")"
+
+    def visit_Binary(self, expr: Binary) -> str:
+        return (
+            f"({expr.op.lexeme} "
+            + self.visit(expr.left)
+            + " "
+            + self.visit(expr.right)
+            + ")"
+        )
+
+    def visit_Group(self, expr: Group) -> str:
+        return "(group " + self.visit(expr.expression) + ")"
 
 
 if __name__ == "__main__":
     import io
-    from typing import Callable
 
     from .._tokens import Token, TokenType
     from .nodes import Binary, Expr, Group, Literal, Unary
@@ -34,92 +83,31 @@ if __name__ == "__main__":
         ),
     )
 
-    # Let's pretty-print that expression tree into the above text form.
+    assert FountainPrinter().visit(expr) == "-3 * (12.4 + 2)"
 
-    class AstPrettyPrinter(NodeVisitor):
-        def __init__(self, write: Callable) -> None:
-            self.write = write
+    assert DebugPrinter().visit(expr) == "(* (- 3) (group (+ 12.4 2)))"
 
-        def visit_Literal(self, expr: Literal) -> None:
+    # Extra: Reverse Polish Notation (RPN)
+
+    class AstRPNPrinter(NodeVisitor[str]):
+        def visit_Literal(self, expr: Literal) -> str:
             if expr.value is None:
-                self.write("nil")
-            self.write(str(expr.value))
+                return "nil"
+            return str(expr.value)
 
-        def visit_Unary(self, expr: Unary) -> None:
-            self.write(expr.op.lexeme)
-            self.visit(expr.right)
+        def visit_Unary(self, expr: Unary) -> str:
+            return self.visit(expr.right) + f" {expr.op.lexeme}"
 
-        def visit_Binary(self, expr: Binary) -> None:
-            self.visit(expr.left)
-            self.write(f" {expr.op.lexeme} ")
-            self.visit(expr.right)
+        def visit_Binary(self, expr: Binary) -> str:
+            return (
+                self.visit(expr.left)
+                + " "
+                + self.visit(expr.right)
+                + f" {expr.op.lexeme}"
+            )
 
-        def visit_Group(self, expr: Group) -> None:
-            self.write("(")
-            self.visit(expr.expression)
-            self.write(")")
+        def visit_Group(self, expr: Group) -> str:
+            return self.visit(expr.expression)
 
     s = io.StringIO()
-    AstPrettyPrinter(write=s.write).visit(expr)
-    assert s.getvalue() == "-3 * (12.4 + 2)"
-
-    # And now, let's show it in a Lisp-like representation!
-
-    class AstLispPrinter(NodeVisitor):
-        def __init__(self, write: Callable) -> None:
-            self.write = write
-
-        def visit_Literal(self, expr: Literal) -> None:
-            if expr.value is None:
-                self.write("nil")
-            self.write(str(expr.value))
-
-        def visit_Unary(self, expr: Unary) -> None:
-            self.write(f"({expr.op.lexeme} ")
-            self.visit(expr.right)
-            self.write(")")
-
-        def visit_Binary(self, expr: Binary) -> None:
-            self.write(f"({expr.op.lexeme} ")
-            self.visit(expr.left)
-            self.write(" ")
-            self.visit(expr.right)
-            self.write(")")
-
-        def visit_Group(self, expr: Group) -> None:
-            self.write("(group ")
-            self.visit(expr.expression)
-            self.write(")")
-
-    s = io.StringIO()
-    AstLispPrinter(write=s.write).visit(expr)
-    assert s.getvalue() == "(* (- 3) (group (+ 12.4 2)))"
-
-    # And finally, in Reverse Polish Notation (RPN)...
-
-    class AstRPNPrinter(NodeVisitor):
-        def __init__(self, write: Callable) -> None:
-            self.write = write
-
-        def visit_Literal(self, expr: Literal) -> None:
-            if expr.value is None:
-                self.write("nil")
-            self.write(str(expr.value))
-
-        def visit_Unary(self, expr: Unary) -> None:
-            self.visit(expr.right)
-            self.write(f" {expr.op.lexeme}")
-
-        def visit_Binary(self, expr: Binary) -> None:
-            self.visit(expr.left)
-            self.write(" ")
-            self.visit(expr.right)
-            self.write(" ")
-            self.write(expr.op.lexeme)
-
-        def visit_Group(self, expr: Group) -> None:
-            self.visit(expr.expression)
-
-    s = io.StringIO()
-    AstRPNPrinter(write=s.write).visit(expr)
-    assert s.getvalue() == "3 - 12.4 2 + *"
+    assert AstRPNPrinter().visit(expr) == "3 - 12.4 2 + *"

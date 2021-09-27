@@ -16,6 +16,7 @@ class TokenType(Enum):
     # One or two character tokens
     EQUAL = auto()  # `=`
     EQUAL_EQUAL = auto()  # `==`
+    BANG_EQUAL = auto()  # `!=`
     GREATER = auto()  # `>`
     GREATER_EQUAL = auto()  # `>=`
     LESS = auto()  # `<`
@@ -186,11 +187,13 @@ def scan_tokens(
             add_token(TokenType.SLASH)
         # One or two character lexemes.
         elif c == "=":
-            add_token(TokenType.EQUAL if matchnext("=") else TokenType.EQUAL_EQUAL)
+            add_token(TokenType.EQUAL_EQUAL if matchnext("=") else TokenType.EQUAL)
         elif c == ">":
             add_token(TokenType.GREATER if matchnext("=") else TokenType.GREATER_EQUAL)
         elif c == "<":
             add_token(TokenType.LESS if matchnext("=") else TokenType.LESS_EQUAL)
+        elif c == "!" and matchnext("="):
+            add_token(TokenType.BANG_EQUAL)
         # Other lexemes.
         elif c == "-":
             if matchnext("-"):  # Comment, skip until end of line.

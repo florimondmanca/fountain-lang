@@ -8,12 +8,14 @@
 * Unary expressions: `not`, `-`.
 * Binary expressions: arithmetic and comparison operators.
 * Parentheses: for wrapping expressions.
+* Take precedence and associativity (left- or right-associative, LA or LA) rules into account: equality (`==`, `!=`; LA), comparison (`>`, `>=`, `<`, `<=`; LA), term (`+`, `-`; LA), factor (`*`, `/`; LA), unary (`not`, `-`; RA). A rule must only match expressions at its precedence level or higher.
 
 ```bash
-expr    = literal | unary | binary | group;
-literal = NUMBER | STRING | "true" | "false" | "nil";
-unary   = ("-" | "not") expr;
-binary  = expr op expr;
-op      = "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/";
-group   = "(" expr ")";
+expression  = equality;
+equality    = comparison ( ( "==" | "!=" ) comparison )*;
+comparison  = term ( ( ">" | ">=" | "<" | "<=" ) term )*;
+term        = factor ( ( "+" | "-" ) factor )*;
+factor      = unary ( ( "*" | "/" ) unary )*;
+unary       = ( "-" | "not" ) unary | primary;
+primary     = TRUE | FALSE | NIL | NUMBER | STRING | "(" expression ")";
 ```

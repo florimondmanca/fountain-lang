@@ -1,5 +1,4 @@
-(),.  -- Punctuation
-and or not true false  -- Logic keywords
+true and false  -- Logic keywords
 "hello, world"
 'hello, single quote world'  -- Inline comment
 "hello, multiline
