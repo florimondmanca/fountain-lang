@@ -1,0 +1,144 @@
+from typing import Any, Callable
+from ._ast import NodeVisitor, Literal, Group, Unary, Binary, TokenType, Expr, Token
+
+__all__ = ["evaluate", "stringify", "EvalError"]
+
+
+def evaluate(
+    expr: Expr, on_error: Callable[[Token, str], None] = lambda token, message: None
+) -> Any:
+    try:
+        return Interpreter().visit(expr)
+    except EvalError as exc:
+        on_error(exc.token, exc.message)
+        return None
+
+
+def stringify(value: Any) -> str:
+    if value is None:
+        return "nil"
+
+    if value is True:
+        return "true"
+
+    if value is False:
+        return "false"
+
+    if isinstance(value, float):
+        text = str(value)
+        if text.endswith(".0"):
+            return text[:-2]
+        return text
+
+    return str(value)
+
+
+class EvalError(RuntimeError):
+    def __init__(self, token: Token, message: str) -> None:
+        super().__init__(message)
+        self.token = token
+        self.message = message
+
+
+class Interpreter(NodeVisitor[Any]):
+    def visit_Literal(self, expr: Literal) -> Any:
+        return expr.value
+
+    def visit_Unary(self, expr: Unary) -> Any:
+        right = self.visit(expr.right)
+
+        if expr.op == TokenType.MINUS:
+            check_number_operand(expr.op, right)
+            return -right
+
+        assert expr.op == TokenType.NOT
+        return not _is_truthy(right)
+
+    def visit_Binary(self, expr: Binary) -> Any:
+        left = self.visit(expr.left)
+
+        # NOTE: evaluate operands lazily for logic operations.
+
+        if expr.op.type == TokenType.AND:
+            if _is_truthy(left):
+                return self.visit(expr.right)
+            return False
+
+        if expr.op.type == TokenType.OR:
+            if _is_truthy(left):
+                return left
+            return self.visit(expr.right)
+
+        # All other operations require evaluating both operands.
+
+        right = self.visit(expr.right)
+
+        if expr.op.type == TokenType.PLUS:
+            check_number_operands(expr.op, left, right)
+            return left + right
+
+        if expr.op.type == TokenType.MINUS:
+            check_number_operands(expr.op, left, right)
+            return left - right
+
+        if expr.op.type == TokenType.STAR:
+            check_number_operands(expr.op, left, right)
+            return left * right
+
+        if expr.op.type == TokenType.SLASH:
+            check_number_operands(expr.op, left, right)
+            return left / right
+
+        if expr.op.type == TokenType.GREATER:
+            check_number_operands(expr.op, left, right)
+            return left > right
+
+        if expr.op.type == TokenType.GREATER_EQUAL:
+            check_number_operands(expr.op, left, right)
+            return left >= right
+
+        if expr.op.type == TokenType.LESS:
+            check_number_operands(expr.op, left, right)
+            return left < right
+
+        if expr.op.type == TokenType.LESS_EQUAL:
+            check_number_operands(expr.op, left, right)
+            return left <= right
+
+        if expr.op.type == TokenType.EQUAL_EQUAL:
+            return left == right
+
+        assert expr.op.type == TokenType.BANG_EQUAL
+        return left != right
+
+    def visit_Group(self, expr: Group) -> Any:
+        return self.visit(expr.expression)
+
+
+def check_number_operand(op: Token, value: Any) -> None:
+    if not isinstance(value, float):
+        raise EvalError(op, "operand must be a number")
+
+
+def check_number_operands(op: Token, left: Any, right: Any) -> None:
+    if not isinstance(left, float):
+        raise EvalError(op, "left operand must be a number")
+
+    if not isinstance(right, float):
+        raise EvalError(op, "right operand must be a number")
+
+    if op.type == TokenType.SLASH and right == 0:
+        raise EvalError(op, "division by zero")
+
+
+def _is_truthy(value: Any) -> bool:
+    if value is None:
+        return False
+
+    if value == 0:
+        return False
+
+    if isinstance(value, bool):
+        return value
+
+    return True

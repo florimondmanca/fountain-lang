@@ -50,16 +50,15 @@ def parse(
         if check(t):
             movenext()
             return
+
         raise error(peek(), error_message)
 
     # Syntax rules.
 
     def expression() -> Expr:
-        # equality;
         return equality()
 
     def equality() -> Expr:
-        # comparison ( ( "==" | "!=" ) comparison )*;
         expr = comparison()
         while match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
             op = previous()
@@ -68,13 +67,14 @@ def parse(
         return expr
 
     def comparison() -> Expr:
-        # term ( ( ">" | ">=" | "<" | "<=" ) term )*;
         expr = term()
         while match(
             TokenType.GREATER,
             TokenType.GREATER_EQUAL,
             TokenType.LESS,
             TokenType.LESS_EQUAL,
+            TokenType.AND,
+            TokenType.OR,
         ):
             op = previous()
             right = term()
@@ -82,7 +82,6 @@ def parse(
         return expr
 
     def term() -> Expr:
-        # factor ( ( "+" | "-" ) factor )*;
         expr = factor()
         while match(TokenType.PLUS, TokenType.MINUS):
             op = previous()
@@ -91,7 +90,6 @@ def parse(
         return expr
 
     def factor() -> Expr:
-        # unary ( ( "*" | "/" ) unary )*;
         expr = unary()
         while match(TokenType.STAR, TokenType.SLASH):
             op = previous()
@@ -100,7 +98,6 @@ def parse(
         return expr
 
     def unary() -> Expr:
-        # ( "-" | "not" ) unary | primary;
         if match(TokenType.MINUS, TokenType.NOT):
             op = previous()
             right = unary()
@@ -108,15 +105,18 @@ def parse(
         return primary()
 
     def primary() -> Expr:
-        # TRUE | FALSE | NIL | NUMBER | STRING | "(" expression ")";
         if match(TokenType.FALSE):
             return Literal(False)
+
         if match(TokenType.TRUE):
             return Literal(True)
+
         if match(TokenType.NIL):
             return Literal(None)
+
         if match(TokenType.NUMBER, TokenType.STRING):
             return Literal(previous().value)
+
         if match(TokenType.LEFT_PARENS):
             expr = expression()
             consume(TokenType.RIGHT_PARENS, "expected ')' after expression")

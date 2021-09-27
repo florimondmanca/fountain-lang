@@ -4,6 +4,7 @@ import sys
 from typing import Callable
 
 from ._ast import Token, TokenType, parse, tokenize, unparse_debug
+from ._eval import evaluate, stringify
 
 
 def cli() -> None:
@@ -14,6 +15,7 @@ def cli() -> None:
 class Fountain:
     def __init__(self, on_exit: Callable[[int], None] = sys.exit) -> None:
         self._had_error = False
+        self._had_runtime_error = False
         self._on_exit = on_exit
 
     def main(self, argv: list[str]) -> None:
@@ -36,6 +38,8 @@ class Fountain:
 
         if self._had_error:
             self._on_exit(65)
+        if self._had_runtime_error:
+            self._on_exit(70)
 
     def _run_file(self, path: str) -> None:
         try:
@@ -49,7 +53,8 @@ class Fountain:
 
         if self._had_error:
             self._on_exit(65)
-            return
+        if self._had_runtime_error:
+            self._on_exit(70)
 
     def _run_prompt(self) -> None:
         while True:
@@ -63,35 +68,34 @@ class Fountain:
                 if not line:
                     break
                 self._run(line)
-                self.had_error = False
+                self._had_error = False
+                self._had_runtime_error = False
 
     def _run(self, source: str) -> None:
         tokens = tokenize(source, on_error=self._on_tokenize_error)
-
-        for token in tokens:
-            print(token)
-
-        if self._had_error:
-            return
-
+        # for token in tokens:
+        #     print(token)
         expr = parse(tokens, on_error=self._on_parser_error)
-
-        if self._had_error:
+        if expr is None:  # An error occurred.
+            assert self._had_error
             return
-
-        assert expr is not None
-
-        print(unparse_debug(expr))
+        # print(unparse_debug(expr))
+        print(stringify(evaluate(expr, on_error=self._on_eval_error)))
 
     def _on_tokenize_error(self, message: str, lineno: int) -> None:
         self._report(message, lineno=lineno)
+        self._had_error = True
 
     def _on_parser_error(self, token: Token, message: str) -> None:
         if token.type == TokenType.EOF:
             self._report(message, lineno=token.lineno, where=": at end")
         else:
             self._report(message, lineno=token.lineno, where=f": at {token.lexeme!r}")
+        self._had_error = True
+
+    def _on_eval_error(self, token: Token, message: str) -> None:
+        self._report(message, lineno=token.lineno, where=f": at {token.lexeme!r}")
+        self._had_runtime_error = True
 
     def _report(self, message: str, *, lineno: int, where: str = "") -> None:
         print(f"[line {lineno}] error{where}: {message}", file=sys.stderr)
-        self._had_error = True
