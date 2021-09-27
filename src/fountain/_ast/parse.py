@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
-from .._tokens import Token, TokenType
 from .nodes import Binary, Expr, Group, Literal, Unary
+from .tokens import Token, TokenType
 
 
 class ParseError(RuntimeError):

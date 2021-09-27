@@ -3,9 +3,7 @@ import pathlib
 import sys
 from typing import Callable
 
-from ._ast.parse import parse
-from ._ast.visitor import DebugPrinter
-from ._tokens import Token, TokenType, scan_tokens
+from ._ast import Token, TokenType, parse, tokenize, unparse_debug
 
 
 def cli() -> None:
@@ -68,7 +66,7 @@ class Fountain:
                 self.had_error = False
 
     def _run(self, source: str) -> None:
-        tokens = scan_tokens(source, on_error=self._on_scan_error)
+        tokens = tokenize(source, on_error=self._on_tokenize_error)
 
         for token in tokens:
             print(token)
@@ -83,9 +81,9 @@ class Fountain:
 
         assert expr is not None
 
-        print(DebugPrinter().visit(expr))
+        print(unparse_debug(expr))
 
-    def _on_scan_error(self, message: str, lineno: int) -> None:
+    def _on_tokenize_error(self, message: str, lineno: int) -> None:
         self._report(message, lineno=lineno)
 
     def _on_parser_error(self, token: Token, message: str) -> None:

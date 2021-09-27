@@ -72,7 +72,7 @@ KEYWORDS = {
 }
 
 
-def scan_tokens(
+def tokenize(
     source: str, on_error: Callable[[str, int], None] = lambda message, lineno: None
 ) -> list[Token]:
     tokens = []

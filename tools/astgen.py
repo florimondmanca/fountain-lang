@@ -13,7 +13,7 @@ def make_ast(basename: str, types: list[str]) -> str:
         "from dataclasses import dataclass",
         "from typing import Any",
         "",
-        "from .._tokens import Token",
+        "from .tokens import Token",
         "",
         "",
         "@dataclass",
