@@ -63,3 +63,8 @@ class Assign(Stmt):
 @dataclass
 class Print(Stmt):
     expression: Expr
+
+
+@dataclass
+class Block(Stmt):
+    statements: list[Stmt]

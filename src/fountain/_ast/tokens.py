@@ -37,11 +37,11 @@ class TokenType(Enum):
     IF = auto()  # `if`
     ELIF = auto()  # `elif`
     ELSE = auto()  # `else`
+    DO = auto()  # `do`
     END = auto()  # `end`
     NIL = auto()  # `nil`
     FOR = auto()  # `for`
     IN = auto()  # `in`
-    DO = auto()  # `do`
     FUN = auto()  # `fun`
     RETURN = auto()  # `return`
     PRINT = auto()  # `print`  # TODO: make it a function later
@@ -64,11 +64,11 @@ KEYWORDS = {
     "if": TokenType.IF,
     "elif": TokenType.ELIF,
     "else": TokenType.ELSE,
+    "do": TokenType.DO,
     "end": TokenType.END,
     "nil": TokenType.NIL,
     "for": TokenType.FOR,
     "in": TokenType.IN,
-    "do": TokenType.DO,
     "fun": TokenType.FUN,
     "print": TokenType.PRINT,
     "return": TokenType.RETURN,

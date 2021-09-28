@@ -1,3 +1,14 @@
 print "Hello, world!"
 print true
 print 2 + 2
+
+x = 1
+
+do
+  x = 2
+  print x
+end
+
+do x = 3; print x end
+
+print x

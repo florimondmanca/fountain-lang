@@ -52,6 +52,8 @@ def test_cli_repl() -> None:
         ("print 'yes' if 1 else 'no'", "yes\n"),
         ("print 1 + 2  -- Inline comment", "3\n"),
         ("x = 3; print x; print x + 2", "3\n5\n"),
+        ("do end", ""),
+        ("x = 0; do x = 1; print x; end; print x", "1\n0\n"),
         ("-- Comment", ""),
         ("", ""),
     ],
@@ -97,6 +99,11 @@ def test_cli_eval(source: str, result: str) -> None:
         (
             "3 = 12",
             "[line 1] error: at '=': cannot assign to literal\n",
+            65,
+        ),
+        (
+            "do x = 1",
+            "[line 1] error: at end: expected 'end' after block\n",
             65,
         ),
         # Runtime errors

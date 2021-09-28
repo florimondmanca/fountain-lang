@@ -22,12 +22,15 @@ simple_stmt:
   | assign_stmt
   | expr_stmt
   | print_stmt
+  | block
 assign_stmt:
   | IDENTIFIER "=" expression
 expr_stmt:
   | expression
 print_stmt:
   | "print" expression
+block:
+  | "do" stmt* "end"
 
 # Expressions
 expression:

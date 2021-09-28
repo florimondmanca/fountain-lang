@@ -4,6 +4,7 @@ from typing import Any, Callable, TextIO
 from ._ast import (
     Assign,
     Binary,
+    Block,
     Conditional,
     Expression,
     Group,
@@ -47,7 +48,8 @@ class EvalError(RuntimeError):
 
 
 class Environment:
-    def __init__(self) -> None:
+    def __init__(self, parent: "Environment" = None) -> None:
+        self._parent = parent
         self._values: dict[str, Any] = {}
 
     def assign(self, name: str, value: Any) -> None:
@@ -57,6 +59,8 @@ class Environment:
         try:
             return self._values[name.lexeme]
         except KeyError:
+            if self._parent is not None:
+                return self._parent.get(name)
             raise EvalError(name, f"name {name.lexeme!r} is not defined") from None
 
 
@@ -90,6 +94,16 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Print(self, stmt: Print) -> None:
         value = self.evaluate(stmt.expression)
         print(stringify(value), file=self._stdout)
+
+    def execute_Block(self, stmt: Block) -> None:
+        previous = self._env
+        env = Environment(parent=previous)
+        try:
+            self._env = env
+            for statement in stmt.statements:
+                self.execute(statement)
+        finally:
+            self._env = previous
 
     def evaluate_Literal(self, expr: Literal) -> Any:
         return expr.value

@@ -1,6 +1,7 @@
 from .nodes import (
     Assign,
     Binary,
+    Block,
     Conditional,
     Expr,
     Expression,
@@ -18,6 +19,7 @@ from .visitor import NodeVisitor
 __all__ = [
     "Assign",
     "Binary",
+    "Block",
     "Conditional",
     "Expr",
     "Expression",

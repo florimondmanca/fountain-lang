@@ -3,6 +3,7 @@ from typing import Callable
 from .nodes import (
     Assign,
     Binary,
+    Block,
     Conditional,
     Expr,
     Expression,
@@ -73,6 +74,9 @@ def parse(
         return stmt
 
     def simple_statement() -> Stmt:
+        if match(TokenType.DO):
+            return block()
+
         if match(TokenType.PRINT):
             return print_statement()
 
@@ -97,6 +101,13 @@ def parse(
     def print_statement() -> Stmt:
         expr = expression()
         return Print(expr)
+
+    def block() -> Stmt:
+        statements = []
+        while not check(TokenType.END) and not done():
+            statements.append(statement())
+        consume(TokenType.END, "expected 'end' after block")
+        return Block(statements)
 
     def expression() -> Expr:
         return conditional()
