@@ -11,4 +11,4 @@ class NodeVisitor(Generic[R]):
         return method(node)
 
     def default(self, expr: Expr) -> R:
-        raise NotImplementedError(f"Unexpected node: {expr}")
+        raise NotImplementedError(f"Unexpected node: {expr}")  # pragma: no cover

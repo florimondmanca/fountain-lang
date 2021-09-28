@@ -5,3 +5,5 @@ black==21.9b0
 flake8
 isort==5.*
 mypy
+pytest
+pytest-cov

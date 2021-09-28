@@ -111,7 +111,7 @@ def parse(
         if match(TokenType.TRUE):
             return Literal(True)
 
-        if match(TokenType.NIL):
+        if match(TokenType.NIL) or done():
             return Literal(None)
 
         if match(TokenType.NUMBER, TokenType.STRING):

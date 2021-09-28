@@ -117,7 +117,7 @@ def tokenize(
 
     def peeknext() -> str:
         # Return the next character, if any.
-        if current + 1 > len(source):
+        if current + 1 >= len(source):
             return "\0"
         return source[current + 1]
 
@@ -132,7 +132,10 @@ def tokenize(
             if c == quote:
                 break
             if c == "\n":
-                lineno += 1  # Allow multi-line strings.
+                on_error(
+                    "unterminated string: EOL while scanning string literal", lineno
+                )
+                return
             readnext()
 
         if done():
@@ -189,9 +192,9 @@ def tokenize(
         elif c == "=":
             add_token(TokenType.EQUAL_EQUAL if matchnext("=") else TokenType.EQUAL)
         elif c == ">":
-            add_token(TokenType.GREATER if matchnext("=") else TokenType.GREATER_EQUAL)
+            add_token(TokenType.GREATER_EQUAL if matchnext("=") else TokenType.GREATER)
         elif c == "<":
-            add_token(TokenType.LESS if matchnext("=") else TokenType.LESS_EQUAL)
+            add_token(TokenType.LESS_EQUAL if matchnext("=") else TokenType.LESS)
         elif c == "!" and matchnext("="):
             add_token(TokenType.BANG_EQUAL)
         # Other lexemes.
@@ -207,9 +210,9 @@ def tokenize(
             lineno += 1
         elif c in ("'", '"'):
             readstring(quote=c)
-        elif c.isdigit():
+        elif c.isdigit() and not peek().isalpha():
             readnumber()
-        elif c.isalnum() or c == "_":
+        elif c.isalpha() or c == "_":
             readidentifier()
         else:
             on_error(f"invalid character: {c!r}", lineno)

@@ -1,9 +1,10 @@
 import argparse
 import pathlib
-import sys
-from typing import Callable
 
-from ._ast import Token, TokenType, parse, tokenize, unparse_debug
+import sys
+from typing import Callable, TextIO
+
+from ._ast import Token, TokenType, parse, tokenize
 from ._eval import evaluate, stringify
 
 
@@ -13,10 +14,19 @@ def cli() -> None:
 
 
 class Fountain:
-    def __init__(self, on_exit: Callable[[int], None] = sys.exit) -> None:
+    def __init__(
+        self,
+        on_exit: Callable[[int], None] = sys.exit,
+        stdin: TextIO = sys.stdin,
+        stdout: TextIO = sys.stdout,
+        stderr: TextIO = sys.stderr,
+    ) -> None:
+        self._on_exit = on_exit
+        self._stdin = stdin
+        self._stdout = stdout
+        self._stderr = stderr
         self._had_error = False
         self._had_runtime_error = False
-        self._on_exit = on_exit
 
     def main(self, argv: list[str]) -> None:
         parser = argparse.ArgumentParser()
@@ -26,7 +36,7 @@ class Fountain:
         group.add_argument("-", dest="stdin", action="store_true", default=True)
         args = parser.parse_args(argv)
 
-        if args.command:
+        if args.command is not None:
             self._run_command(args.command)
         elif args.path:
             self._run_file(args.path)
@@ -45,7 +55,7 @@ class Fountain:
         try:
             source = pathlib.Path(path).read_text()
         except FileNotFoundError as exc:
-            print(f"Cannot open file {path!r}: {exc}")
+            print(f"Cannot open file {path!r}: {exc}", file=self._stdout)
             self._on_exit(1)
             return
 
@@ -58,12 +68,12 @@ class Fountain:
 
     def _run_prompt(self) -> None:
         while True:
-            print("> ", end="", flush=True)
+            print("> ", end="", flush=True, file=self._stdout)
 
             try:
-                line = sys.stdin.readline()
+                line = self._stdin.readline()
             except KeyboardInterrupt:
-                print()
+                print(file=self._stdout)
             else:
                 if not line:
                     break
@@ -73,14 +83,16 @@ class Fountain:
 
     def _run(self, source: str) -> None:
         tokens = tokenize(source, on_error=self._on_tokenize_error)
-        # for token in tokens:
-        #     print(token)
+        if self._had_error:
+            return
         expr = parse(tokens, on_error=self._on_parser_error)
         if expr is None:  # An error occurred.
             assert self._had_error
             return
-        # print(unparse_debug(expr))
-        print(stringify(evaluate(expr, on_error=self._on_eval_error)))
+        value = evaluate(expr, on_error=self._on_eval_error)
+        if self._had_runtime_error:
+            return
+        print(stringify(value), file=self._stdout)
 
     def _on_tokenize_error(self, message: str, lineno: int) -> None:
         self._report(message, lineno=lineno)
@@ -98,4 +110,4 @@ class Fountain:
         self._had_runtime_error = True
 
     def _report(self, message: str, *, lineno: int, where: str = "") -> None:
-        print(f"[line {lineno}] error{where}: {message}", file=sys.stderr)
+        print(f"[line {lineno}] error{where}: {message}", file=self._stderr)

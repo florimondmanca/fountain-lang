@@ -1,5 +1,6 @@
 from typing import Any, Callable
-from ._ast import NodeVisitor, Literal, Group, Unary, Binary, TokenType, Expr, Token
+
+from ._ast import Binary, Expr, Group, Literal, NodeVisitor, Token, TokenType, Unary
 
 __all__ = ["evaluate", "stringify", "EvalError"]
 
@@ -47,11 +48,11 @@ class Interpreter(NodeVisitor[Any]):
     def visit_Unary(self, expr: Unary) -> Any:
         right = self.visit(expr.right)
 
-        if expr.op == TokenType.MINUS:
+        if expr.op.type == TokenType.MINUS:
             check_number_operand(expr.op, right)
             return -right
 
-        assert expr.op == TokenType.NOT
+        assert expr.op.type == TokenType.NOT
         return not _is_truthy(right)
 
     def visit_Binary(self, expr: Binary) -> Any:
@@ -62,7 +63,7 @@ class Interpreter(NodeVisitor[Any]):
         if expr.op.type == TokenType.AND:
             if _is_truthy(left):
                 return self.visit(expr.right)
-            return False
+            return left
 
         if expr.op.type == TokenType.OR:
             if _is_truthy(left):
@@ -74,7 +75,7 @@ class Interpreter(NodeVisitor[Any]):
         right = self.visit(expr.right)
 
         if expr.op.type == TokenType.PLUS:
-            check_number_operands(expr.op, left, right)
+            check_add_operands(expr.op, left, right)
             return left + right
 
         if expr.op.type == TokenType.MINUS:
@@ -118,6 +119,16 @@ class Interpreter(NodeVisitor[Any]):
 def check_number_operand(op: Token, value: Any) -> None:
     if not isinstance(value, float):
         raise EvalError(op, "operand must be a number")
+
+
+def check_add_operands(op: Token, left: Any, right: Any) -> None:
+    if isinstance(left, float):
+        check_number_operands(op, left, right)
+        return
+
+    if isinstance(left, str):
+        if not isinstance(right, str):
+            raise EvalError(op, "can only concatenate str to str")
 
 
 def check_number_operands(op: Token, left: Any, right: Any) -> None:
