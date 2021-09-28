@@ -4,7 +4,7 @@ import sys
 from typing import Callable, TextIO
 
 from ._ast import Token, TokenType, parse, tokenize
-from ._eval import evaluate, stringify
+from ._eval import execute
 
 
 def cli() -> None:
@@ -84,14 +84,10 @@ class Fountain:
         tokens = tokenize(source, on_error=self._on_tokenize_error)
         if self._had_error:
             return
-        expr = parse(tokens, on_error=self._on_parser_error)
-        if expr is None:  # An error occurred.
-            assert self._had_error
+        statements = parse(tokens, on_error=self._on_parser_error)
+        if self._had_error:
             return
-        value = evaluate(expr, on_error=self._on_eval_error)
-        if self._had_runtime_error:
-            return
-        print(stringify(value), file=self._stdout)
+        execute(statements, on_error=self._on_eval_error, stdout=self._stdout)
 
     def _on_tokenize_error(self, message: str, lineno: int) -> None:
         self._report(message, lineno=lineno)

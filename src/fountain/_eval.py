@@ -1,25 +1,32 @@
-from typing import Any, Callable
+import sys
+from typing import Any, Callable, TextIO
 
 from ._ast import (
     Binary,
     Conditional,
-    Expr,
+    Expression,
     Group,
     Literal,
     NodeVisitor,
+    Print,
+    Stmt,
     Token,
     TokenType,
     Unary,
 )
 
-__all__ = ["evaluate", "stringify", "EvalError"]
+__all__ = ["execute"]
 
 
-def evaluate(
-    expr: Expr, on_error: Callable[[Token, str], None] = lambda token, message: None
-) -> Any:
+def execute(
+    statements: list[Stmt],
+    on_error: Callable[[Token, str], None] = lambda token, message: None,
+    stdout: TextIO = sys.stdout,
+) -> None:
+    interpreter = Interpreter(stdout=stdout)
     try:
-        return Interpreter().visit(expr)
+        for stmt in statements:
+            interpreter.execute(stmt)
     except EvalError as exc:
         on_error(exc.token, exc.message)
         return None
@@ -52,11 +59,21 @@ class EvalError(RuntimeError):
 
 
 class Interpreter(NodeVisitor[Any]):
-    def visit_Literal(self, expr: Literal) -> Any:
+    def __init__(self, stdout: TextIO = sys.stdout) -> None:
+        self._stdout = stdout
+
+    def execute_Expression(self, stmt: Expression) -> None:
+        self.evaluate(stmt.expression)
+
+    def execute_Print(self, stmt: Print) -> None:
+        value = self.evaluate(stmt.expression)
+        print(stringify(value), file=self._stdout)
+
+    def evaluate_Literal(self, expr: Literal) -> Any:
         return expr.value
 
-    def visit_Unary(self, expr: Unary) -> Any:
-        right = self.visit(expr.right)
+    def evaluate_Unary(self, expr: Unary) -> Any:
+        right = self.evaluate(expr.right)
 
         if expr.op.type == TokenType.MINUS:
             check_number_operand(expr.op, right)
@@ -65,24 +82,24 @@ class Interpreter(NodeVisitor[Any]):
         assert expr.op.type == TokenType.NOT
         return not _is_truthy(right)
 
-    def visit_Binary(self, expr: Binary) -> Any:
-        left = self.visit(expr.left)
+    def evaluate_Binary(self, expr: Binary) -> Any:
+        left = self.evaluate(expr.left)
 
         # NOTE: evaluate operands lazily for logic operations.
 
         if expr.op.type == TokenType.AND:
             if _is_truthy(left):
-                return self.visit(expr.right)
+                return self.evaluate(expr.right)
             return left
 
         if expr.op.type == TokenType.OR:
             if _is_truthy(left):
                 return left
-            return self.visit(expr.right)
+            return self.evaluate(expr.right)
 
         # All other operations require evaluating both operands.
 
-        right = self.visit(expr.right)
+        right = self.evaluate(expr.right)
 
         if expr.op.type == TokenType.PLUS:
             check_add_operands(expr.op, left, right)
@@ -122,14 +139,14 @@ class Interpreter(NodeVisitor[Any]):
         assert expr.op.type == TokenType.BANG_EQUAL
         return left != right
 
-    def visit_Group(self, expr: Group) -> Any:
-        return self.visit(expr.expression)
+    def evaluate_Group(self, expr: Group) -> Any:
+        return self.evaluate(expr.expression)
 
-    def visit_Conditional(self, expr: Conditional) -> Any:
-        test = _is_truthy(self.visit(expr.test))
+    def evaluate_Conditional(self, expr: Conditional) -> Any:
+        test = _is_truthy(self.evaluate(expr.test))
         if test:
-            return self.visit(expr.body)
-        return self.visit(expr.orelse)
+            return self.evaluate(expr.body)
+        return self.evaluate(expr.orelse)
 
 
 def check_number_operand(op: Token, value: Any) -> None:

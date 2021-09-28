@@ -43,6 +43,7 @@ class TokenType(Enum):
     DO = auto()  # `do`
     FUN = auto()  # `fun`
     RETURN = auto()  # `return`
+    PRINT = auto()  # `print`  # TODO: make it a function later
     EOF = auto()  # EOF
 
 
@@ -68,6 +69,7 @@ KEYWORDS = {
     "in": TokenType.IN,
     "do": TokenType.DO,
     "fun": TokenType.FUN,
+    "print": TokenType.PRINT,
     "return": TokenType.RETURN,
 }
 
@@ -152,7 +154,7 @@ def tokenize(
         while (c := peek()).isdigit():
             readnext()
 
-        if c == "." and peeknext().isdigit():  # Decimals.
+        if c == ".":  # Decimals.
             readnext()  # Skip the ".".
             while peek().isdigit():
                 readnext()

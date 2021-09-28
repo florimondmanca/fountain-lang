@@ -1,6 +1,16 @@
-from typing import Callable, Optional
+from typing import Callable
 
-from .nodes import Binary, Conditional, Expr, Group, Literal, Unary
+from .nodes import (
+    Binary,
+    Conditional,
+    Expr,
+    Expression,
+    Group,
+    Literal,
+    Print,
+    Stmt,
+    Unary,
+)
 from .tokens import Token, TokenType
 
 
@@ -11,7 +21,7 @@ class ParseError(RuntimeError):
 def parse(
     tokens: list[Token],
     on_error: Callable[[Token, str], None] = lambda token, message: None,
-) -> Optional[Expr]:
+) -> list[Stmt]:
     current = 0
 
     # Helpers.
@@ -54,6 +64,19 @@ def parse(
         raise error(peek(), error_message)
 
     # Syntax rules.
+
+    def statement() -> Stmt:
+        if match(TokenType.PRINT):
+            return print_statement()
+        return expr_statement()
+
+    def print_statement() -> Stmt:
+        expr = expression()
+        return Print(expr)
+
+    def expr_statement() -> Stmt:
+        expr = expression()
+        return Expression(expr)
 
     def expression() -> Expr:
         return conditional()
@@ -152,7 +175,10 @@ def parse(
             ):
                 return
 
+    statements = []
     try:
-        return expression()
+        while not done():
+            statements.append(statement())
+        return statements
     except ParseError:
-        return None
+        return []

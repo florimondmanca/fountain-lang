@@ -6,7 +6,7 @@ from fountain._cli import Fountain
 
 def test_cli_repl() -> None:
     stdin = io.StringIO()
-    stdin.write("1 + 2")
+    stdin.write("print 1 + 2")
     stdin.seek(0)
     stdout = io.StringIO()
     stderr = io.StringIO()
@@ -19,40 +19,40 @@ def test_cli_repl() -> None:
 @pytest.mark.parametrize(
     "source, result",
     [
-        ("1 + 2", "3"),
-        ("-2 * 3", "-6"),
-        ("2 * (5-3.6)", "2.8"),
-        ("3/4", "0.75"),
-        ("'he' + 'llo'", "hello"),
-        ("true and true", "true"),
-        ("true and false", "false"),
-        ("true or false", "true"),
-        ("false or false", "false"),
-        ("nil or true", "true"),
-        ("1 and 2", "2"),
-        ("1 or 2", "1"),
-        ("0 and 2", "0"),
-        ("1 < 2", "true"),
-        ("1 <= 2", "true"),
-        ("2 <= 2", "true"),
-        ("2 < 2", "false"),
-        ("3 < 2", "false"),
-        ("2 > 2", "false"),
-        ("2 >= 2", "true"),
-        ("3 >= 2", "true"),
-        ("3 > 2", "true"),
-        ("2 == 2", "true"),
-        ("2 == 2.0", "true"),
-        ("2 == 2.", "true"),
-        ("2 != 2", "false"),
-        ("2 != 2.1", "true"),
-        ("2 != 'hello'", "true"),
-        ("3 if true else 2", "3"),
-        ("3 if false else 2", "2"),
-        ("'yes' if 1 else 'no'", "yes"),
-        ("1 + 2  -- Inline comment", "3"),
-        # ("-- Comment", "nil"),
-        # ("", "nil"),
+        ("print 1 + 2", "3\n"),
+        ("print -2 * 3", "-6\n"),
+        ("print 2 * (5-3.6)", "2.8\n"),
+        ("print 3/4", "0.75\n"),
+        ("print 'he' + 'llo'", "hello\n"),
+        ("print true and true", "true\n"),
+        ("print true and false", "false\n"),
+        ("print true or false", "true\n"),
+        ("print false or false", "false\n"),
+        ("print nil or true", "true\n"),
+        ("print 1 and 2", "2\n"),
+        ("print 1 or 2", "1\n"),
+        ("print 0 and 2", "0\n"),
+        ("print 1 < 2", "true\n"),
+        ("print 1 <= 2", "true\n"),
+        ("print 2 <= 2", "true\n"),
+        ("print 2 < 2", "false\n"),
+        ("print 3 < 2", "false\n"),
+        ("print 2 > 2", "false\n"),
+        ("print 2 >= 2", "true\n"),
+        ("print 3 >= 2", "true\n"),
+        ("print 3 > 2", "true\n"),
+        ("print 2 == 2", "true\n"),
+        ("print 2 == 2.0", "true\n"),
+        ("print 2 == 2.", "true\n"),
+        ("print 2 != 2", "false\n"),
+        ("print 2 != 2.1", "true\n"),
+        ("print 2 != 'hello'", "true\n"),
+        ("print 3 if true else 2", "3\n"),
+        ("print 3 if false else 2", "2\n"),
+        ("print 'yes' if 1 else 'no'", "yes\n"),
+        ("print 1 + 2  -- Inline comment", "3\n"),
+        ("-- Comment", ""),
+        ("", ""),
     ],
 )
 def test_cli_eval(source: str, result: str) -> None:
@@ -60,7 +60,7 @@ def test_cli_eval(source: str, result: str) -> None:
     stderr = io.StringIO()
     ft = Fountain(stdout=stdout, stderr=stderr)
     ft.main(["-c", source])
-    assert stdout.getvalue() == f"{result}\n"
+    assert stdout.getvalue() == result
     assert stderr.getvalue() == ""
 
 
