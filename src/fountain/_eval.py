@@ -1,6 +1,16 @@
 from typing import Any, Callable
 
-from ._ast import Binary, Expr, Group, Literal, NodeVisitor, Token, TokenType, Unary
+from ._ast import (
+    Binary,
+    Conditional,
+    Expr,
+    Group,
+    Literal,
+    NodeVisitor,
+    Token,
+    TokenType,
+    Unary,
+)
 
 __all__ = ["evaluate", "stringify", "EvalError"]
 
@@ -114,6 +124,12 @@ class Interpreter(NodeVisitor[Any]):
 
     def visit_Group(self, expr: Group) -> Any:
         return self.visit(expr.expression)
+
+    def visit_Conditional(self, expr: Conditional) -> Any:
+        test = _is_truthy(self.visit(expr.test))
+        if test:
+            return self.visit(expr.body)
+        return self.visit(expr.orelse)
 
 
 def check_number_operand(op: Token, value: Any) -> None:

@@ -1,6 +1,5 @@
 import argparse
 import pathlib
-
 import sys
 from typing import Callable, TextIO
 

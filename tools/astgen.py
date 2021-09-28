@@ -46,10 +46,11 @@ if __name__ == "__main__":
 
     types = [
         # Syntax: class_name = attr1: type1[, ...]
-        "Literal = value: Any",
-        "Unary   = op: Token, right: Expr",
-        "Binary  = left: Expr, op: Token, right: Expr",
-        "Group   = expression: Expr",
+        "Literal       = value: Any",
+        "Unary         = op: Token, right: Expr",
+        "Binary        = left: Expr, op: Token, right: Expr",
+        "Group         = expression: Expr",
+        "Conditional   = test: Expr, body: Expr, orelse: Expr",
     ]
 
     ast = make_ast("Expr", types)

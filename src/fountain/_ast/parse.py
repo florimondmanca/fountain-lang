@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from .nodes import Binary, Expr, Group, Literal, Unary
+from .nodes import Binary, Conditional, Expr, Group, Literal, Unary
 from .tokens import Token, TokenType
 
 
@@ -56,7 +56,16 @@ def parse(
     # Syntax rules.
 
     def expression() -> Expr:
-        return equality()
+        return conditional()
+
+    def conditional() -> Expr:
+        body = equality()
+        if match(TokenType.IF):
+            test = expression()
+            consume(TokenType.ELSE, "expected 'else' after expression")
+            orelse = expression()
+            return Conditional(test, body, orelse)
+        return body
 
     def equality() -> Expr:
         expr = comparison()
@@ -111,7 +120,7 @@ def parse(
         if match(TokenType.TRUE):
             return Literal(True)
 
-        if match(TokenType.NIL) or done():
+        if match(TokenType.NIL) or not tokens:
             return Literal(None)
 
         if match(TokenType.NUMBER, TokenType.STRING):

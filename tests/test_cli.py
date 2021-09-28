@@ -47,9 +47,12 @@ def test_cli_repl() -> None:
         ("2 != 2", "false"),
         ("2 != 2.1", "true"),
         ("2 != 'hello'", "true"),
+        ("3 if true else 2", "3"),
+        ("3 if false else 2", "2"),
+        ("'yes' if 1 else 'no'", "yes"),
         ("1 + 2  -- Inline comment", "3"),
-        ("-- Comment", "nil"),
-        ("", "nil"),
+        # ("-- Comment", "nil"),
+        # ("", "nil"),
     ],
 )
 def test_cli_eval(source: str, result: str) -> None:
@@ -79,6 +82,11 @@ def test_cli_eval(source: str, result: str) -> None:
         (
             "'hello\n",
             "[line 1] error: unterminated string: EOL while scanning string literal\n",
+            65,
+        ),
+        (
+            "3 if false",
+            "[line 1] error: at end: expected 'else' after expression\n",
             65,
         ),
         # Runtime errors

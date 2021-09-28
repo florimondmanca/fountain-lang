@@ -30,3 +30,10 @@ class Binary(Expr):
 @dataclass
 class Group(Expr):
     expression: Expr
+
+
+@dataclass
+class Conditional(Expr):
+    test: Expr
+    body: Expr
+    orelse: Expr
