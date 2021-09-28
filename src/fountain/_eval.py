@@ -2,6 +2,7 @@ import sys
 from typing import Any, Callable, TextIO
 
 from ._ast import (
+    Assert,
     Assign,
     Binary,
     Block,
@@ -94,6 +95,20 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Print(self, stmt: Print) -> None:
         value = self.evaluate(stmt.expression)
         print(stringify(value), file=self._stdout)
+
+    def execute_Assert(self, stmt: Assert) -> None:
+        test = self.evaluate(stmt.test)
+
+        if _is_truthy(test):
+            return
+
+        message = (
+            stringify(self.evaluate(stmt.message))
+            if stmt.message is not None
+            else "<assertion failed>"
+        )
+
+        raise EvalError(stmt.op, message)
 
     def execute_Block(self, stmt: Block) -> None:
         previous = self._env

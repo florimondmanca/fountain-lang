@@ -1,4 +1,5 @@
 from .nodes import (
+    Assert,
     Assign,
     Binary,
     Block,
@@ -17,6 +18,7 @@ from .tokens import Token, TokenType, tokenize
 from .visitor import NodeVisitor
 
 __all__ = [
+    "Assert",
     "Assign",
     "Binary",
     "Block",

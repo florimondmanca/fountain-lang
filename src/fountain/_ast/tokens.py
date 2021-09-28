@@ -45,6 +45,7 @@ class TokenType(Enum):
     FUN = auto()  # `fun`
     RETURN = auto()  # `return`
     PRINT = auto()  # `print`  # TODO: make it a function later
+    ASSERT = auto()  # `assert`  # TODO: make it a function later
     EOF = auto()  # EOF
 
 
@@ -71,6 +72,7 @@ KEYWORDS = {
     "in": TokenType.IN,
     "fun": TokenType.FUN,
     "print": TokenType.PRINT,
+    "assert": TokenType.ASSERT,
     "return": TokenType.RETURN,
 }
 

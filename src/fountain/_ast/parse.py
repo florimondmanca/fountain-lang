@@ -1,6 +1,7 @@
 from typing import Callable
 
 from .nodes import (
+    Assert,
     Assign,
     Binary,
     Block,
@@ -80,6 +81,9 @@ def parse(
         if match(TokenType.PRINT):
             return print_statement()
 
+        if match(TokenType.ASSERT):
+            return assert_statement()
+
         # May be an expression (r-value), or an assignment (l-value = r-value).
         # Consume left-hand side as if it was an expression,
         # then make sure it is a valid variable if followed by '='.
@@ -101,6 +105,12 @@ def parse(
     def print_statement() -> Stmt:
         expr = expression()
         return Print(expr)
+
+    def assert_statement() -> Stmt:
+        op = previous()
+        test = expression()
+        message = expression() if match(TokenType.COMMA) else None
+        return Assert(op, test, message)
 
     def block() -> Stmt:
         statements = []

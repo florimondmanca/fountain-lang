@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from .tokens import Token
 
@@ -63,6 +63,13 @@ class Assign(Stmt):
 @dataclass
 class Print(Stmt):
     expression: Expr
+
+
+@dataclass
+class Assert(Stmt):
+    op: Token
+    test: Expr
+    message: Optional[Expr]
 
 
 @dataclass

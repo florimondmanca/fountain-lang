@@ -9,7 +9,7 @@ import pathlib
 def make_ast(groups: list[tuple[str, list[str]]]) -> str:
     lines = [
         "from dataclasses import dataclass",
-        "from typing import Any",
+        "from typing import Any, Optional",
         "",
         "from .tokens import Token",
         "",
@@ -59,6 +59,7 @@ if __name__ == "__main__":
         "Expression = expression: Expr",
         "Assign     = target: Token, value: Expr",
         "Print      = expression: Expr",
+        "Assert     = op: Token, test: Expr, message: Optional[Expr]",
         "Block      = statements: list[Stmt]",
     ]
 

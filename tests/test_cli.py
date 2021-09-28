@@ -54,6 +54,7 @@ def test_cli_repl() -> None:
         ("x = 3; print x; print x + 2", "3\n5\n"),
         ("do end", ""),
         ("x = 0; do x = 1; print x; end; print x", "1\n0\n"),
+        ("assert true", ""),
         ("-- Comment", ""),
         ("", ""),
     ],
@@ -125,6 +126,16 @@ def test_cli_eval(source: str, result: str) -> None:
         (
             "print x",
             "[line 1] error: at 'x': name 'x' is not defined\n",
+            70,
+        ),
+        (
+            "assert false",
+            "[line 1] error: at 'assert': <assertion failed>\n",
+            70,
+        ),
+        (
+            "assert not true, 'false!'",
+            "[line 1] error: at 'assert': false!\n",
             70,
         ),
     ],

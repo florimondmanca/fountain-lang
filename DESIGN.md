@@ -19,18 +19,21 @@ program:
 stmt:
   | simple_stmt ";"?
 simple_stmt:
+  | block
+  | print_stmt
+  | assert_stmt
   | assign_stmt
   | expr_stmt
-  | print_stmt
-  | block
+block:
+  | "do" stmt* "end"
+print_stmt:
+  | "print" expression
+assert_stmt:
+  | "assert" expression ("," expression)?
 assign_stmt:
   | IDENTIFIER "=" expression
 expr_stmt:
   | expression
-print_stmt:
-  | "print" expression
-block:
-  | "do" stmt* "end"
 
 # Expressions
 expression:
