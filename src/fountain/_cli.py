@@ -4,7 +4,7 @@ import sys
 from typing import Callable, TextIO
 
 from ._ast import Token, TokenType, parse, tokenize
-from ._eval import execute
+from ._eval import Interpreter
 
 
 def cli() -> None:
@@ -26,6 +26,7 @@ class Fountain:
         self._stderr = stderr
         self._had_error = False
         self._had_runtime_error = False
+        self._interpreter = Interpreter(stdout=stdout, on_error=self._on_eval_error)
 
     def main(self, argv: list[str]) -> None:
         parser = argparse.ArgumentParser()
@@ -87,7 +88,7 @@ class Fountain:
         statements = parse(tokens, on_error=self._on_parser_error)
         if self._had_error:
             return
-        execute(statements, on_error=self._on_eval_error, stdout=self._stdout)
+        self._interpreter.interpret(statements)
 
     def _on_tokenize_error(self, message: str, lineno: int) -> None:
         self._report(message, lineno=lineno)

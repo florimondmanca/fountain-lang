@@ -1,4 +1,5 @@
 from .nodes import (
+    Assign,
     Binary,
     Conditional,
     Expr,
@@ -8,12 +9,14 @@ from .nodes import (
     Print,
     Stmt,
     Unary,
+    Variable,
 )
 from .parse import parse
 from .tokens import Token, TokenType, tokenize
 from .visitor import NodeVisitor
 
 __all__ = [
+    "Assign",
     "Binary",
     "Conditional",
     "Expr",
@@ -21,6 +24,7 @@ __all__ = [
     "Group",
     "Literal",
     "Unary",
+    "Variable",
     "parse",
     "Print",
     "Stmt",

@@ -8,6 +8,7 @@ class TokenType(Enum):
     RIGHT_PARENS = auto()  # `)`
     COMMA = auto()  # `,`
     DOT = auto()  # `.`
+    SEMICOLON = auto()  # `;`
     PLUS = auto()  # `+`
     MINUS = auto()  # `-`
     STAR = auto()  # `*`
@@ -184,6 +185,8 @@ def tokenize(
             add_token(TokenType.COMMA)
         elif c == ".":
             add_token(TokenType.DOT)
+        elif c == ";":
+            add_token(TokenType.SEMICOLON)
         elif c == "+":
             add_token(TokenType.PLUS)
         elif c == "*":

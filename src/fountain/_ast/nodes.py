@@ -40,6 +40,11 @@ class Conditional(Expr):
 
 
 @dataclass
+class Variable(Expr):
+    name: Token
+
+
+@dataclass
 class Stmt:
     pass
 
@@ -47,6 +52,12 @@ class Stmt:
 @dataclass
 class Expression(Stmt):
     expression: Expr
+
+
+@dataclass
+class Assign(Stmt):
+    target: Token
+    value: Expr
 
 
 @dataclass

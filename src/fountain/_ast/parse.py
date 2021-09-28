@@ -1,6 +1,7 @@
 from typing import Callable
 
 from .nodes import (
+    Assign,
     Binary,
     Conditional,
     Expr,
@@ -10,6 +11,7 @@ from .nodes import (
     Print,
     Stmt,
     Unary,
+    Variable,
 )
 from .tokens import Token, TokenType
 
@@ -66,17 +68,35 @@ def parse(
     # Syntax rules.
 
     def statement() -> Stmt:
+        stmt = simple_statement()
+        match(TokenType.SEMICOLON)  # In case of multi-statement line.
+        return stmt
+
+    def simple_statement() -> Stmt:
         if match(TokenType.PRINT):
             return print_statement()
-        return expr_statement()
+
+        # May be an expression (r-value), or an assignment (l-value = r-value).
+        # Consume left-hand side as if it was an expression,
+        # then make sure it is a valid variable if followed by '='.
+        # This allows arbitrarily long assignment targets while
+        # sticking to one-character lookahead.
+        expr = expression()
+
+        if match(TokenType.EQUAL):
+            equals = previous()
+            if isinstance(expr, Variable):
+                target = expr.name
+                value = expression()
+                return Assign(target, value)
+            dtype = expr.__class__.__name__.lower()
+            raise error(equals, f"cannot assign to {dtype}")
+
+        return Expression(expr)
 
     def print_statement() -> Stmt:
         expr = expression()
         return Print(expr)
-
-    def expr_statement() -> Stmt:
-        expr = expression()
-        return Expression(expr)
 
     def expression() -> Expr:
         return conditional()
@@ -153,6 +173,9 @@ def parse(
             expr = expression()
             consume(TokenType.RIGHT_PARENS, "expected ')' after expression")
             return Group(expr)
+
+        if match(TokenType.IDENTIFIER):
+            return Variable(previous())
 
         raise error(peek(), "expected expression")
 

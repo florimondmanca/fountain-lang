@@ -51,6 +51,7 @@ def test_cli_repl() -> None:
         ("print 3 if false else 2", "2\n"),
         ("print 'yes' if 1 else 'no'", "yes\n"),
         ("print 1 + 2  -- Inline comment", "3\n"),
+        ("x = 3; print x; print x + 2", "3\n5\n"),
         ("-- Comment", ""),
         ("", ""),
     ],
@@ -68,7 +69,11 @@ def test_cli_eval(source: str, result: str) -> None:
     "source, err, exit_code",
     [
         # Syntax errors
-        ("(3 + 4", "[line 1] error: at end: expected ')' after expression\n", 65),
+        (
+            "(3 + 4",
+            "[line 1] error: at end: expected ')' after expression\n",
+            65,
+        ),
         (
             "'hello",
             "[line 1] error: unterminated string: EOF while scanning string literal\n",
@@ -89,12 +94,30 @@ def test_cli_eval(source: str, result: str) -> None:
             "[line 1] error: at end: expected 'else' after expression\n",
             65,
         ),
+        (
+            "3 = 12",
+            "[line 1] error: at '=': cannot assign to literal\n",
+            65,
+        ),
         # Runtime errors
-        ("1/0", "[line 1] error: at '/': division by zero\n", 70),
-        ("1 + true", "[line 1] error: at '+': right operand must be a number\n", 70),
+        (
+            "1/0",
+            "[line 1] error: at '/': division by zero\n",
+            70,
+        ),
+        (
+            "1 + true",
+            "[line 1] error: at '+': right operand must be a number\n",
+            70,
+        ),
         (
             "'hello' + 1",
             "[line 1] error: at '+': can only concatenate str to str\n",
+            70,
+        ),
+        (
+            "print x",
+            "[line 1] error: at 'x': name 'x' is not defined\n",
             70,
         ),
     ],

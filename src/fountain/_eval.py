@@ -2,6 +2,7 @@ import sys
 from typing import Any, Callable, TextIO
 
 from ._ast import (
+    Assign,
     Binary,
     Conditional,
     Expression,
@@ -13,23 +14,10 @@ from ._ast import (
     Token,
     TokenType,
     Unary,
+    Variable,
 )
 
-__all__ = ["execute"]
-
-
-def execute(
-    statements: list[Stmt],
-    on_error: Callable[[Token, str], None] = lambda token, message: None,
-    stdout: TextIO = sys.stdout,
-) -> None:
-    interpreter = Interpreter(stdout=stdout)
-    try:
-        for stmt in statements:
-            interpreter.execute(stmt)
-    except EvalError as exc:
-        on_error(exc.token, exc.message)
-        return None
+__all__ = ["Interpreter"]
 
 
 def stringify(value: Any) -> str:
@@ -58,12 +46,46 @@ class EvalError(RuntimeError):
         self.message = message
 
 
+class Environment:
+    def __init__(self) -> None:
+        self._values: dict[str, Any] = {}
+
+    def assign(self, name: str, value: Any) -> None:
+        self._values[name] = value
+
+    def get(self, name: Token) -> Any:
+        try:
+            return self._values[name.lexeme]
+        except KeyError:
+            raise EvalError(name, f"name {name.lexeme!r} is not defined") from None
+
+
 class Interpreter(NodeVisitor[Any]):
-    def __init__(self, stdout: TextIO = sys.stdout) -> None:
+    def __init__(
+        self,
+        stdout: TextIO = sys.stdout,
+        on_error: Callable[[Token, str], None] = lambda token, message: None,
+    ) -> None:
         self._stdout = stdout
+        self._on_error = on_error
+        self._env = Environment()
+
+    def interpret(self, statements: list[Stmt]) -> None:
+        try:
+            for stmt in statements:
+                self.execute(stmt)
+        except EvalError as exc:
+            self._on_error(exc.token, exc.message)
+            return None
+
+    def execute_Assign(self, stmt: Assign) -> None:
+        name = stmt.target.lexeme
+        value = self.evaluate(stmt.value)
+        self._env.assign(name, value)
 
     def execute_Expression(self, stmt: Expression) -> None:
-        self.evaluate(stmt.expression)
+        value = self.evaluate(stmt.expression)
+        print(stringify(value), file=self._stdout)
 
     def execute_Print(self, stmt: Print) -> None:
         value = self.evaluate(stmt.expression)
@@ -147,6 +169,9 @@ class Interpreter(NodeVisitor[Any]):
         if test:
             return self.evaluate(expr.body)
         return self.evaluate(expr.orelse)
+
+    def evaluate_Variable(self, expr: Variable) -> Any:
+        return self._env.get(expr.name)
 
 
 def check_number_operand(op: Token, value: Any) -> None:
