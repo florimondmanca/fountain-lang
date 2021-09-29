@@ -9,6 +9,6 @@ SOURCE_FILES="src tools"
 
 set -x
 
-${PREFIX}autoflake --in-place --recursive $SOURCE_FILES
-${PREFIX}isort $SOURCE_FILES
-${PREFIX}black --target-version=py39 $SOURCE_FILES
+${BIN}autoflake --in-place --recursive $SOURCE_FILES
+${BIN}isort $SOURCE_FILES
+${BIN}black --target-version=py39 $SOURCE_FILES

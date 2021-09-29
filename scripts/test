@@ -10,4 +10,5 @@ if [ -z $CI ]; then
 fi
 
 set -x
+
 ${BIN}pytest "$@"
