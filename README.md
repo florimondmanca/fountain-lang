@@ -1,6 +1,6 @@
 # fountain-lang
 
-An interpreted programming language, written in Python.
+A toy interpreted programming language, written in Python.
 
 ```console
 $ fountain app.ft
