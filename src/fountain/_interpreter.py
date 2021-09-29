@@ -1,5 +1,4 @@
-import sys
-from typing import Any, Callable, TextIO
+from typing import Any
 
 from ._ast import (
     Assert,
@@ -18,88 +17,39 @@ from ._ast import (
     Unary,
     Variable,
 )
+from ._exceptions import EvalError
 
 __all__ = ["Interpreter"]
 
 
-def stringify(value: Any) -> str:
-    if value is None:
-        return "nil"
-
-    if value is True:
-        return "true"
-
-    if value is False:
-        return "false"
-
-    if isinstance(value, float):
-        text = str(value)
-        if text.endswith(".0"):
-            return text[:-2]
-        return text
-
-    return str(value)
-
-
-class EvalError(RuntimeError):
-    def __init__(self, token: Token, message: str) -> None:
-        super().__init__(message)
-        self.token = token
-        self.message = message
-
-
-class Environment:
-    def __init__(self, parent: "Environment" = None) -> None:
-        self._parent = parent
-        self._values: dict[str, Any] = {}
-
-    def assign(self, name: str, value: Any) -> None:
-        self._values[name] = value
-
-    def get(self, name: Token) -> Any:
-        try:
-            return self._values[name.lexeme]
-        except KeyError:
-            if self._parent is not None:
-                return self._parent.get(name)
-            raise EvalError(name, f"name {name.lexeme!r} is not defined") from None
-
-
 class Interpreter(NodeVisitor[Any]):
-    def __init__(
-        self,
-        stdout: TextIO = sys.stdout,
-        on_error: Callable[[Token, str], None] = lambda token, message: None,
-    ) -> None:
-        self._stdout = stdout
-        self._on_error = on_error
-        self._env = Environment()
+    def __init__(self) -> None:
+        self._scope = Scope()
 
     def interpret(self, statements: list[Stmt]) -> None:
         try:
             for stmt in statements:
                 self.execute(stmt)
-        except EvalError as exc:
-            self._on_error(exc.token, exc.message)
-            return None
+        except EvalError:
+            raise
 
     def execute_Assign(self, stmt: Assign) -> None:
         name = stmt.target.lexeme
         value = self.evaluate(stmt.value)
-        self._env.assign(name, value)
+        self._scope.assign(name, value)
 
     def execute_Expression(self, stmt: Expression) -> None:
         value = self.evaluate(stmt.expression)
-        print(stringify(value), file=self._stdout)
+        print(stringify(value))
 
     def execute_Print(self, stmt: Print) -> None:
         value = self.evaluate(stmt.expression)
-        print(stringify(value), file=self._stdout)
+        print(stringify(value))
 
     def execute_Assert(self, stmt: Assert) -> None:
         test = self.evaluate(stmt.test)
 
-        if _is_truthy(test):
+        if is_truthy(test):
             return
 
         message = (
@@ -111,14 +61,14 @@ class Interpreter(NodeVisitor[Any]):
         raise EvalError(stmt.op, message)
 
     def execute_Block(self, stmt: Block) -> None:
-        previous = self._env
-        env = Environment(parent=previous)
+        previous_scope = self._scope
+        scope = Scope(parent=previous_scope)
         try:
-            self._env = env
+            self._scope = scope
             for statement in stmt.statements:
                 self.execute(statement)
         finally:
-            self._env = previous
+            self._scope = previous_scope
 
     def evaluate_Literal(self, expr: Literal) -> Any:
         return expr.value
@@ -131,7 +81,7 @@ class Interpreter(NodeVisitor[Any]):
             return -right
 
         assert expr.op.type == TokenType.NOT
-        return not _is_truthy(right)
+        return not is_truthy(right)
 
     def evaluate_Binary(self, expr: Binary) -> Any:
         left = self.evaluate(expr.left)
@@ -139,12 +89,12 @@ class Interpreter(NodeVisitor[Any]):
         # NOTE: evaluate operands lazily for logic operations.
 
         if expr.op.type == TokenType.AND:
-            if _is_truthy(left):
+            if is_truthy(left):
                 return self.evaluate(expr.right)
             return left
 
         if expr.op.type == TokenType.OR:
-            if _is_truthy(left):
+            if is_truthy(left):
                 return left
             return self.evaluate(expr.right)
 
@@ -194,13 +144,30 @@ class Interpreter(NodeVisitor[Any]):
         return self.evaluate(expr.expression)
 
     def evaluate_Conditional(self, expr: Conditional) -> Any:
-        test = _is_truthy(self.evaluate(expr.test))
+        test = is_truthy(self.evaluate(expr.test))
         if test:
             return self.evaluate(expr.body)
         return self.evaluate(expr.orelse)
 
     def evaluate_Variable(self, expr: Variable) -> Any:
-        return self._env.get(expr.name)
+        return self._scope.get(expr.name)
+
+
+class Scope:
+    def __init__(self, parent: "Scope" = None) -> None:
+        self._parent = parent
+        self._values: dict[str, Any] = {}
+
+    def assign(self, name: str, value: Any) -> None:
+        self._values[name] = value
+
+    def get(self, name: Token) -> Any:
+        try:
+            return self._values[name.lexeme]
+        except KeyError:
+            if self._parent is not None:
+                return self._parent.get(name)
+            raise EvalError(name, f"name {name.lexeme!r} is not defined") from None
 
 
 def check_number_operand(op: Token, value: Any) -> None:
@@ -229,7 +196,26 @@ def check_number_operands(op: Token, left: Any, right: Any) -> None:
         raise EvalError(op, "division by zero")
 
 
-def _is_truthy(value: Any) -> bool:
+def stringify(value: Any) -> str:
+    if value is None:
+        return "nil"
+
+    if value is True:
+        return "true"
+
+    if value is False:
+        return "false"
+
+    if isinstance(value, float):
+        text = str(value)
+        if text.endswith(".0"):
+            return text[:-2]
+        return text
+
+    return str(value)
+
+
+def is_truthy(value: Any) -> bool:
     if value is None:
         return False
 

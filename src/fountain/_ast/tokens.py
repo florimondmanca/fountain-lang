@@ -1,5 +1,7 @@
 from enum import Enum, auto
-from typing import Any, Callable, NamedTuple
+from typing import Any, NamedTuple
+
+from .._exceptions import TokenizeError
 
 
 class TokenType(Enum):
@@ -77,9 +79,7 @@ KEYWORDS = {
 }
 
 
-def tokenize(
-    source: str, on_error: Callable[[str, int], None] = lambda message, lineno: None
-) -> list[Token]:
+def tokenize(source: str) -> list[Token]:
     tokens = []
 
     start = 0  # First character in the lexeme being scanned.
@@ -137,15 +137,13 @@ def tokenize(
             if c == quote:
                 break
             if c == "\n":
-                on_error(
-                    "unterminated string: EOL while scanning string literal", lineno
-                )
-                return
+                message = "unterminated string: EOL while scanning string literal"
+                raise TokenizeError(lineno, message)
             readnext()
 
         if done():
-            on_error("unterminated string: EOF while scanning string literal", lineno)
-            return
+            message = "unterminated string: EOF while scanning string literal"
+            raise TokenizeError(lineno, message)
 
         # Add the closing quote.
         readnext()
@@ -222,8 +220,7 @@ def tokenize(
         elif c.isalpha() or c == "_":
             readidentifier()
         else:
-            on_error(f"invalid character: {c!r}", lineno)
-            # Keep scanning.
+            raise TokenizeError(lineno, f"invalid character: {c!r}")
 
     while not done():
         start = current

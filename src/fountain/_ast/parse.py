@@ -1,5 +1,4 @@
-from typing import Callable
-
+from .._exceptions import ParseError
 from .nodes import (
     Assert,
     Assign,
@@ -18,14 +17,7 @@ from .nodes import (
 from .tokens import Token, TokenType
 
 
-class ParseError(RuntimeError):
-    pass
-
-
-def parse(
-    tokens: list[Token],
-    on_error: Callable[[Token, str], None] = lambda token, message: None,
-) -> list[Stmt]:
+def parse(tokens: list[Token]) -> list[Stmt]:
     current = 0
 
     # Helpers.
@@ -56,16 +48,12 @@ def parse(
             return False
         return peek().type == t
 
-    def error(token: Token, message: str) -> Exception:
-        on_error(token, message)
-        return ParseError()
-
     def consume(t: TokenType, error_message: str) -> None:
         if check(t):
             movenext()
             return
 
-        raise error(peek(), error_message)
+        raise ParseError(peek(), error_message)
 
     # Syntax rules.
 
@@ -98,7 +86,7 @@ def parse(
                 value = expression()
                 return Assign(target, value)
             dtype = expr.__class__.__name__.lower()
-            raise error(equals, f"cannot assign to {dtype}")
+            raise ParseError(equals, f"cannot assign to {dtype}")
 
         return Expression(expr)
 
@@ -198,7 +186,7 @@ def parse(
         if match(TokenType.IDENTIFIER):
             return Variable(previous())
 
-        raise error(peek(), "expected expression")
+        raise ParseError(peek(), "expected expression")
 
     def synchronize() -> None:
         # Discard next tokens until we hit the beginning of the next statement.
@@ -225,4 +213,4 @@ def parse(
             statements.append(statement())
         return statements
     except ParseError:
-        return []
+        raise

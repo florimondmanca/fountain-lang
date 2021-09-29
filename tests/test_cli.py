@@ -1,19 +1,19 @@
 import io
+import sys
 import pytest
+from typing import Any
 
-from fountain._cli import Fountain
+from fountain._cli import CLI
 
 
-def test_cli_repl() -> None:
-    stdin = io.StringIO()
-    stdin.write("print 1 + 2")
-    stdin.seek(0)
-    stdout = io.StringIO()
-    stderr = io.StringIO()
-    ft = Fountain(stdin=stdin, stdout=stdout, stderr=stderr)
-    ft.main([])
-    assert stdout.getvalue() == "> 3\n> "
-    assert stderr.getvalue() == ""
+def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
+    mock_stdin = io.StringIO("print 1 + 2")
+    monkeypatch.setattr(sys, "stdin", mock_stdin)
+
+    CLI().main([])
+    captured = capsys.readouterr()
+    assert captured.out == "> 3\n> "
+    assert captured.err == ""
 
 
 @pytest.mark.parametrize(
@@ -59,13 +59,11 @@ def test_cli_repl() -> None:
         ("", ""),
     ],
 )
-def test_cli_eval(source: str, result: str) -> None:
-    stdout = io.StringIO()
-    stderr = io.StringIO()
-    ft = Fountain(stdout=stdout, stderr=stderr)
-    ft.main(["-c", source])
-    assert stdout.getvalue() == result
-    assert stderr.getvalue() == ""
+def test_cli_eval(source: str, result: str, capsys: Any) -> None:
+    CLI().main(["-c", source])
+    captured = capsys.readouterr()
+    assert captured.out == result
+    assert captured.err == ""
 
 
 @pytest.mark.parametrize(
@@ -140,14 +138,8 @@ def test_cli_eval(source: str, result: str) -> None:
         ),
     ],
 )
-def test_cli_eval_error(source: str, err: str, exit_code: int) -> None:
-    stdout = io.StringIO()
-    stderr = io.StringIO()
-    exit_codes = []
-    ft = Fountain(
-        stdout=stdout, stderr=stderr, on_exit=lambda code: exit_codes.append(code)
-    )
-    ft.main(["-c", source])
-    assert exit_codes == [exit_code]
-    assert stdout.getvalue() == ""
-    assert stderr.getvalue() == err
+def test_cli_eval_error(source: str, err: str, exit_code: int, capsys: Any) -> None:
+    assert CLI().main(["-c", source]) == exit_code
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == err
