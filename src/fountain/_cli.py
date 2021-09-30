@@ -26,13 +26,13 @@ class CLI:
         args = parser.parse_args(argv)
 
         if args.command is not None:
-            return self._run_command(args.command)
+            return self.run(args.command)
         elif args.path:
             return self._run_file(args.path)
         else:
             return self._run_prompt()
 
-    def _run(self, source: str) -> int:
+    def run(self, source: str) -> int:
         try:
             tokens = tokenize(source)
         except TokenizeError as exc:
@@ -55,9 +55,6 @@ class CLI:
 
         return 0
 
-    def _run_command(self, command: str) -> int:
-        return self._run(command)
-
     def _run_file(self, path: str) -> int:
         try:
             source = pathlib.Path(path).read_text()
@@ -66,7 +63,7 @@ class CLI:
             print(message)
             return 1
 
-        return self._run(source)
+        return self.run(source)
 
     def _run_prompt(self) -> int:
         while True:
@@ -81,7 +78,7 @@ class CLI:
             if not line:
                 break
 
-            _ = self._run(line)
+            _ = self.run(line)
 
         return 0
 

@@ -1,7 +1,9 @@
 import io
 import sys
-import pytest
+from textwrap import dedent
 from typing import Any
+
+import pytest
 
 from fountain._cli import CLI
 
@@ -52,15 +54,40 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
         ("print 'yes' if 1 else 'no'", "yes\n"),
         ("print 1 + 2  -- Inline comment", "3\n"),
         ("x = 3; print x; print x + 2", "3\n5\n"),
+        ("x = 3; print x; print x + 2", "3\n5\n"),
+        (
+            dedent(
+                """
+                x = 3
+                print x
+                print x + 2
+                """
+            ),
+            "3\n5\n",
+        ),
         ("do end", ""),
         ("x = 0; do x = 1; print x; end; print x", "1\n0\n"),
+        (
+            dedent(
+                """
+                x = 0
+                do
+                    x = 1
+                    print x
+                end
+                print x
+                """
+            ),
+            "1\n0\n",
+        ),
         ("assert true", ""),
         ("-- Comment", ""),
         ("", ""),
     ],
 )
 def test_cli_eval(source: str, result: str, capsys: Any) -> None:
-    CLI().main(["-c", source])
+    cli = CLI()
+    cli.run(source)
     captured = capsys.readouterr()
     assert captured.out == result
     assert captured.err == ""

@@ -40,5 +40,5 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.9",
     ],
-    entry_points={"console_scripts": "fountain=fountain:cli"},
+    entry_points={"console_scripts": "fountain=fountain:main"},
 )
