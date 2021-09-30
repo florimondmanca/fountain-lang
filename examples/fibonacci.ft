@@ -1,0 +1,17 @@
+print "Fibonacci sequence"
+
+a = 0
+b = 1
+temp = 0
+
+for do
+  print a
+
+  if a >= 1000 * 1000 * 1000 do
+    break
+  end
+
+  temp = a
+  a = b
+  b = temp + b
+end

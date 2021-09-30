@@ -76,6 +76,21 @@ class If(Stmt):
 
 
 @dataclass
+class For(Stmt):
+    body: list[Stmt]
+
+
+@dataclass
+class Break(Stmt):
+    op: Token
+
+
+@dataclass
+class Continue(Stmt):
+    op: Token
+
+
+@dataclass
 class Assert(Stmt):
     op: Token
     test: Expr

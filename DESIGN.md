@@ -22,15 +22,20 @@ simple_stmt:
   | block
   | print_stmt
   | if_stmt
+  | for_stmt
   | assert_stmt
   | assign_stmt
   | expr_stmt
+  | "break"
+  | "continue"
 block:
   | "do" stmt* "end"
 print_stmt:
   | "print" expression
 if_stmt:
   | "if" (expression "do" stmt*) | (expression "do" stmt* "else" stmt*) "end"
+for_stmt:
+  | "for" "do" stmt* "end"
 assert_stmt:
   | "assert" expression ("," expression)?
 assign_stmt:
@@ -71,3 +76,5 @@ primary:
 ### Resources
 
 - On avoiding semicolons: [How Lua avoids semicolons](https://www.seventeencups.net/posts/how-lua-avoids-semicolons/)
+- [Lua grammar reference](http://lua-users.org/wiki/LuaGrammar)
+- [Python grammar reference](https://docs.python.org/3/reference/grammar.html)

@@ -29,3 +29,11 @@ class EvalError(RuntimeError):
         super().__init__(message)
         self.token = token
         self.message = message
+
+
+class BreakExc(Exception):
+    pass
+
+
+class ContinueExc(Exception):
+    pass

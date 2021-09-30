@@ -23,3 +23,15 @@ if 1 > 2 do
 else
   print "yep"
 end
+
+i = 0
+for do
+  for do
+    print i + 1
+    break
+  end
+  if i > 4 do
+    break
+  end
+  i = i + 1
+end

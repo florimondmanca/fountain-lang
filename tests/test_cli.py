@@ -98,6 +98,23 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
             """,
             "yep\n",
         ),
+        (
+            """
+            i = 0
+            for do
+                if i > 5 do
+                    break
+                end
+                if i == 3 do
+                    i = i + 1
+                    continue
+                end
+                print i
+                i = i + 1
+            end
+            """,
+            "0\n1\n2\n4\n5\n",
+        ),
         ("assert true", ""),
         ("-- Comment", ""),
         ("", ""),
@@ -168,6 +185,24 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
         (
             "do x = 1",
             "[line 1] error: at end: expected 'end' after block\n",
+            65,
+        ),
+        (
+            "break",
+            "[line 1] error: at 'break': break outside loop\n",
+            65,
+        ),
+        (
+            "continue",
+            "[line 1] error: at 'continue': continue outside loop\n",
+            65,
+        ),
+        (
+            """
+            for do
+                print "missing end"
+            """,
+            "[line 4] error: at end: expected 'end' to close 'for'\n",
             65,
         ),
         # Runtime errors

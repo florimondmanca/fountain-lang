@@ -43,6 +43,9 @@ class TokenType(Enum):
     END = auto()  # `end`
     NIL = auto()  # `nil`
     FOR = auto()  # `for`
+    BREAK = auto()  # `break`
+    CONTINUE = auto()  # `continue`
+    PASS = auto()  # `pass`
     IN = auto()  # `in`
     FUN = auto()  # `fun`
     RETURN = auto()  # `return`
@@ -71,6 +74,9 @@ KEYWORDS = {
     "end": TokenType.END,
     "nil": TokenType.NIL,
     "for": TokenType.FOR,
+    "break": TokenType.BREAK,
+    "continue": TokenType.CONTINUE,
+    "pass": TokenType.PASS,
     "in": TokenType.IN,
     "fun": TokenType.FUN,
     "print": TokenType.PRINT,

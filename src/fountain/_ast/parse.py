@@ -4,10 +4,13 @@ from .nodes import (
     Assign,
     Binary,
     Block,
+    Break,
     Conjunction,
+    Continue,
     Disjunction,
     Expr,
     Expression,
+    For,
     Group,
     If,
     Literal,
@@ -21,6 +24,7 @@ from .tokens import Token, TokenType
 
 def parse(tokens: list[Token]) -> list[Stmt]:
     current = 0
+    loop = False
 
     # Helpers.
 
@@ -74,6 +78,19 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         if match(TokenType.IF):
             return if_statement()
 
+        if match(TokenType.FOR):
+            return for_statement()
+
+        if match(TokenType.BREAK):
+            if not loop:
+                raise ParseError(previous(), "break outside loop")
+            return Break(previous())
+
+        if match(TokenType.CONTINUE):
+            if not loop:
+                raise ParseError(previous(), "continue outside loop")
+            return Continue(previous())
+
         if match(TokenType.ASSERT):
             return assert_statement()
 
@@ -119,6 +136,23 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         consume(TokenType.END, "expected 'end' to close 'if'")
 
         return If(test, body, orelse)
+
+    def for_statement() -> Stmt:
+        nonlocal loop
+        previous = loop
+        loop = True
+
+        consume(TokenType.DO, "expected 'do' after 'for'")
+
+        body = []
+        while not check(TokenType.END) and not done():
+            body.append(statement())
+
+        consume(TokenType.END, "expected 'end' to close 'for'")
+
+        loop = previous
+
+        return For(body)
 
     def assert_statement() -> Stmt:
         op = previous()

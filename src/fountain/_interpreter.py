@@ -5,9 +5,12 @@ from ._ast import (
     Assign,
     Binary,
     Block,
+    Break,
     Conjunction,
+    Continue,
     Disjunction,
     Expression,
+    For,
     Group,
     If,
     Literal,
@@ -19,7 +22,7 @@ from ._ast import (
     Unary,
     Variable,
 )
-from ._exceptions import EvalError
+from ._exceptions import BreakExc, ContinueExc, EvalError
 
 __all__ = ["Interpreter"]
 
@@ -56,6 +59,23 @@ class Interpreter(NodeVisitor[Any]):
         else:
             for s in stmt.orelse:
                 self.execute(s)
+
+    def execute_For(self, stmt: For) -> None:
+        while True:
+            try:
+                for s in stmt.body:
+                    try:
+                        self.execute(s)
+                    except ContinueExc:
+                        break
+            except BreakExc:
+                break
+
+    def execute_Break(self, stmt: Break) -> None:
+        raise BreakExc()
+
+    def execute_Continue(self, stmt: Continue) -> None:
+        raise ContinueExc()
 
     def execute_Assert(self, stmt: Assert) -> None:
         test = self.evaluate(stmt.test)

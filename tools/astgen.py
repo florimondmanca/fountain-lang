@@ -28,7 +28,7 @@ def make_ast(groups: list[tuple[str, list[str]]]) -> str:
             name, sep, fieldspec = t.partition("=")
             assert sep
             name = name.strip()
-            fields = [f.strip() for f in fieldspec.strip().split(",")]
+            fields = [f.strip() for f in fieldspec.strip().split(",") if f] or ["pass"]
             lines += [
                 "",
                 "@dataclass",
@@ -61,6 +61,9 @@ if __name__ == "__main__":
         "Assign     = target: Token, value: Expr",
         "Print      = expression: Expr",
         "If         = test: Expr, body: list[Stmt], orelse: list[Stmt]",
+        "For        = body: list[Stmt]",
+        "Break      = op: Token",
+        "Continue   = op: Token",
         "Assert     = op: Token, test: Expr, message: Optional[Expr]",
         "Block      = statements: list[Stmt]",
     ]
