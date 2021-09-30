@@ -1,6 +1,5 @@
 import io
 import sys
-from textwrap import dedent
 from typing import Any
 
 import pytest
@@ -49,36 +48,55 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
         ("print 2 != 2", "false\n"),
         ("print 2 != 2.1", "true\n"),
         ("print 2 != 'hello'", "true\n"),
-        ("print 3 if true else 2", "3\n"),
-        ("print 3 if false else 2", "2\n"),
-        ("print 'yes' if 1 else 'no'", "yes\n"),
+        ("print true and 3 or 2", "3\n"),
+        ("print false and 3 or 2", "2\n"),
+        ("print 1 and 'yes' or 'no'", "yes\n"),
+        ("print 1 and 2 or 4", "2\n"),
+        ("print 0 and 2 or 4", "4\n"),
+        ("print 1 or 2 and 4", "1\n"),
+        ("print 0 or false and 4", "false\n"),
+        ("print 0 or false or 1 and 4", "4\n"),
         ("print 1 + 2  -- Inline comment", "3\n"),
         ("x = 3; print x; print x + 2", "3\n5\n"),
         ("x = 3; print x; print x + 2", "3\n5\n"),
         (
-            dedent(
-                """
-                x = 3
-                print x
-                print x + 2
-                """
-            ),
+            """
+            x = 3
+            print x
+            print x + 2
+            """,
             "3\n5\n",
         ),
         ("do end", ""),
         ("x = 0; do x = 1; print x; end; print x", "1\n0\n"),
         (
-            dedent(
-                """
-                x = 0
-                do
-                    x = 1
-                    print x
-                end
+            """
+            x = 0
+            do
+                x = 1
                 print x
-                """
-            ),
+            end
+            print x
+            """,
             "1\n0\n",
+        ),
+        (
+            """
+            if 1 < 2 do
+                print "yep"
+            end
+            """,
+            "yep\n",
+        ),
+        (
+            """
+            if 1 > 2 do
+                print "nah"
+            else
+                print "yep"
+            end
+            """,
+            "yep\n",
         ),
         ("assert true", ""),
         ("-- Comment", ""),
@@ -118,8 +136,28 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             65,
         ),
         (
-            "3 if false",
-            "[line 1] error: at end: expected 'else' after expression\n",
+            "3 if true else 2",  # Ternary operator, not supported, use and/or instead.
+            "[line 1] error: at 'else': expected 'do' after condition\n",
+            65,
+        ),
+        (
+            """
+            if 1 < 2 do
+                print 'yes'
+            -- missing 'end'
+            """,
+            "[line 5] error: at end: expected 'end' to close 'if'\n",
+            65,
+        ),
+        (
+            """
+            if 1 < 2 do
+                print 'yes'
+            else
+                print 'no'
+            -- missing 'end'
+            """,
+            "[line 7] error: at end: expected 'end' to close 'if'\n",
             65,
         ),
         (
@@ -166,7 +204,7 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
     ],
 )
 def test_cli_eval_error(source: str, err: str, exit_code: int, capsys: Any) -> None:
-    assert CLI().main(["-c", source]) == exit_code
+    assert CLI().run(source) == exit_code
     captured = capsys.readouterr()
     assert captured.out == ""
     assert captured.err == err

@@ -52,13 +52,15 @@ if __name__ == "__main__":
         "Unary         = op: Token, right: Expr",
         "Binary        = left: Expr, op: Token, right: Expr",
         "Group         = expression: Expr",
-        "Conditional   = test: Expr, body: Expr, orelse: Expr",
+        "Disjunction   = expressions: list[Expr]",
+        "Conjunction   = expressions: list[Expr]",
         "Variable      = name: Token",
     ]
     stmt_types = [
         "Expression = expression: Expr",
         "Assign     = target: Token, value: Expr",
         "Print      = expression: Expr",
+        "If         = test: Expr, body: list[Stmt], orelse: list[Stmt]",
         "Assert     = op: Token, test: Expr, message: Optional[Expr]",
         "Block      = statements: list[Stmt]",
     ]

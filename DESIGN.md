@@ -21,6 +21,7 @@ stmt:
 simple_stmt:
   | block
   | print_stmt
+  | if_stmt
   | assert_stmt
   | assign_stmt
   | expr_stmt
@@ -28,6 +29,8 @@ block:
   | "do" stmt* "end"
 print_stmt:
   | "print" expression
+if_stmt:
+  | "if" (expression "do" stmt*) | (expression "do" stmt* "else" stmt*) "end"
 assert_stmt:
   | "assert" expression ("," expression)?
 assign_stmt:
@@ -37,9 +40,13 @@ expr_stmt:
 
 # Expressions
 expression:
-  | conditional
-conditional:
-  | equality ("if" equality "else" equality)?
+  | disjunction
+disjunction:
+  | conjunction ("or" conjunction)+
+  | conjunction
+conjunction:
+  | equality ("and" equality)+
+  | equality
 equality:
   |  comparison ( ( "==" | "!=" ) comparison )*
 comparison:
@@ -60,3 +67,7 @@ primary:
   | STRING
   | "(" expression ")"
 ```
+
+### Resources
+
+- On avoiding semicolons: [How Lua avoids semicolons](https://www.seventeencups.net/posts/how-lua-avoids-semicolons/)

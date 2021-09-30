@@ -12,3 +12,14 @@ end
 do x = 3; print x end
 
 print x
+
+if 1 < 2 do
+  print "yep"
+  print "yep again"
+end
+
+if 1 > 2 do
+  print "nah"
+else
+  print "yep"
+end

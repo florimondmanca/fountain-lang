@@ -33,10 +33,13 @@ class Group(Expr):
 
 
 @dataclass
-class Conditional(Expr):
-    test: Expr
-    body: Expr
-    orelse: Expr
+class Disjunction(Expr):
+    expressions: list[Expr]
+
+
+@dataclass
+class Conjunction(Expr):
+    expressions: list[Expr]
 
 
 @dataclass
@@ -63,6 +66,13 @@ class Assign(Stmt):
 @dataclass
 class Print(Stmt):
     expression: Expr
+
+
+@dataclass
+class If(Stmt):
+    test: Expr
+    body: list[Stmt]
+    orelse: list[Stmt]
 
 
 @dataclass

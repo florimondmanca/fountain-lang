@@ -5,9 +5,11 @@ from ._ast import (
     Assign,
     Binary,
     Block,
-    Conditional,
+    Conjunction,
+    Disjunction,
     Expression,
     Group,
+    If,
     Literal,
     NodeVisitor,
     Print,
@@ -45,6 +47,15 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Print(self, stmt: Print) -> None:
         value = self.evaluate(stmt.expression)
         print(stringify(value))
+
+    def execute_If(self, stmt: If) -> None:
+        test = self.evaluate(stmt.test)
+        if is_truthy(test):
+            for s in stmt.body:
+                self.execute(s)
+        else:
+            for s in stmt.orelse:
+                self.execute(s)
 
     def execute_Assert(self, stmt: Assert) -> None:
         test = self.evaluate(stmt.test)
@@ -85,21 +96,6 @@ class Interpreter(NodeVisitor[Any]):
 
     def evaluate_Binary(self, expr: Binary) -> Any:
         left = self.evaluate(expr.left)
-
-        # NOTE: evaluate operands lazily for logic operations.
-
-        if expr.op.type == TokenType.AND:
-            if is_truthy(left):
-                return self.evaluate(expr.right)
-            return left
-
-        if expr.op.type == TokenType.OR:
-            if is_truthy(left):
-                return left
-            return self.evaluate(expr.right)
-
-        # All other operations require evaluating both operands.
-
         right = self.evaluate(expr.right)
 
         if expr.op.type == TokenType.PLUS:
@@ -143,11 +139,19 @@ class Interpreter(NodeVisitor[Any]):
     def evaluate_Group(self, expr: Group) -> Any:
         return self.evaluate(expr.expression)
 
-    def evaluate_Conditional(self, expr: Conditional) -> Any:
-        test = is_truthy(self.evaluate(expr.test))
-        if test:
-            return self.evaluate(expr.body)
-        return self.evaluate(expr.orelse)
+    def evaluate_Disjunction(self, expr: Disjunction) -> Any:
+        for exp in expr.expressions:
+            value = self.evaluate(exp)
+            if is_truthy(value):
+                return value
+        return value
+
+    def evaluate_Conjunction(self, expr: Conjunction) -> Any:
+        for exp in expr.expressions:
+            value = self.evaluate(exp)
+            if not is_truthy(value):
+                return value
+        return value
 
     def evaluate_Variable(self, expr: Variable) -> Any:
         return self._scope.get(expr.name)

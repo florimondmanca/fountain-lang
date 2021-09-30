@@ -4,10 +4,12 @@ from .nodes import (
     Assign,
     Binary,
     Block,
-    Conditional,
+    Conjunction,
+    Disjunction,
     Expr,
     Expression,
     Group,
+    If,
     Literal,
     Print,
     Stmt,
@@ -69,6 +71,9 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         if match(TokenType.PRINT):
             return print_statement()
 
+        if match(TokenType.IF):
+            return if_statement()
+
         if match(TokenType.ASSERT):
             return assert_statement()
 
@@ -94,6 +99,27 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         expr = expression()
         return Print(expr)
 
+    def if_statement() -> Stmt:
+        test = expression()
+        consume(TokenType.DO, "expected 'do' after condition")
+
+        body: list[Stmt] = []
+        orelse: list[Stmt] = []
+        target = body
+
+        while True:
+            if done():
+                break
+            if match(TokenType.ELSE):
+                target = orelse
+            if check(TokenType.END):
+                break
+            target.append(statement())
+
+        consume(TokenType.END, "expected 'end' to close 'if'")
+
+        return If(test, body, orelse)
+
     def assert_statement() -> Stmt:
         op = previous()
         test = expression()
@@ -108,16 +134,25 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         return Block(statements)
 
     def expression() -> Expr:
-        return conditional()
+        return disjunction()
 
-    def conditional() -> Expr:
-        body = equality()
-        if match(TokenType.IF):
-            test = expression()
-            consume(TokenType.ELSE, "expected 'else' after expression")
-            orelse = expression()
-            return Conditional(test, body, orelse)
-        return body
+    def disjunction() -> Expr:
+        expr = conjunction()
+        if match(TokenType.OR):
+            expressions = [expr, conjunction()]
+            while match(TokenType.OR):
+                expressions.append(conjunction())
+            return Disjunction(expressions)
+        return expr
+
+    def conjunction() -> Expr:
+        expr = equality()
+        if match(TokenType.AND):
+            expressions = [expr, equality()]
+            while match(TokenType.AND):
+                expressions.append(equality())
+            return Conjunction(expressions)
+        return expr
 
     def equality() -> Expr:
         expr = comparison()
@@ -134,8 +169,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             TokenType.GREATER_EQUAL,
             TokenType.LESS,
             TokenType.LESS_EQUAL,
-            TokenType.AND,
-            TokenType.OR,
         ):
             op = previous()
             right = term()

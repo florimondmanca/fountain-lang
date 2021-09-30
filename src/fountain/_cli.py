@@ -73,7 +73,7 @@ class CLI:
                 line = sys.stdin.readline()
             except KeyboardInterrupt:
                 print()  # Show `^C`.
-                break
+                continue
 
             if not line:
                 break
