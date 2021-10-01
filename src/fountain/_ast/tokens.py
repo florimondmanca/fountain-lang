@@ -47,7 +47,7 @@ class TokenType(Enum):
     CONTINUE = auto()  # `continue`
     PASS = auto()  # `pass`
     IN = auto()  # `in`
-    FUN = auto()  # `fun`
+    FN = auto()  # `fn`
     RETURN = auto()  # `return`
     PRINT = auto()  # `print`  # TODO: make it a function later
     ASSERT = auto()  # `assert`  # TODO: make it a function later
@@ -78,7 +78,7 @@ KEYWORDS = {
     "continue": TokenType.CONTINUE,
     "pass": TokenType.PASS,
     "in": TokenType.IN,
-    "fun": TokenType.FUN,
+    "fn": TokenType.FN,
     "print": TokenType.PRINT,
     "assert": TokenType.ASSERT,
     "return": TokenType.RETURN,

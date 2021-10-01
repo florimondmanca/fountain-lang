@@ -6,30 +6,39 @@ from ._ast import (
     Binary,
     Block,
     Break,
+    Call,
     Conjunction,
     Continue,
     Disjunction,
     Expression,
     For,
+    Function,
     Group,
     If,
     Literal,
     NodeVisitor,
     Print,
+    Return,
     Stmt,
     Token,
     TokenType,
     Unary,
     Variable,
 )
-from ._exceptions import BreakExc, ContinueExc, EvalError
+from ._builtins import BUILTINS
+from ._exceptions import BreakExc, ContinueExc, EvalError, ReturnExc
+from ._functions import FunctionType, UserFunction
+from ._scope import Scope
 
 __all__ = ["Interpreter"]
 
 
 class Interpreter(NodeVisitor[Any]):
     def __init__(self) -> None:
-        self._scope = Scope()
+        scope = Scope()
+        for name, value in BUILTINS:
+            scope.assign(name, value)
+        self._scope = scope
 
     def interpret(self, statements: list[Stmt]) -> None:
         try:
@@ -77,6 +86,10 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Continue(self, stmt: Continue) -> None:
         raise ContinueExc()
 
+    def execute_Return(self, stmt: Return) -> None:
+        value = self.evaluate(stmt.expr) if stmt.expr is not None else None
+        raise ReturnExc(value)
+
     def execute_Assert(self, stmt: Assert) -> None:
         test = self.evaluate(stmt.test)
 
@@ -92,14 +105,21 @@ class Interpreter(NodeVisitor[Any]):
         raise EvalError(stmt.op, message)
 
     def execute_Block(self, stmt: Block) -> None:
+        scope = Scope(self._scope)
+        self.execute_scoped(stmt.statements, scope)
+
+    def execute_scoped(self, statements: list[Stmt], scope: Scope) -> None:
         previous_scope = self._scope
-        scope = Scope(parent=previous_scope)
         try:
             self._scope = scope
-            for statement in stmt.statements:
+            for statement in statements:
                 self.execute(statement)
         finally:
             self._scope = previous_scope
+
+    def execute_Function(self, stmt: Function) -> Any:
+        func = UserFunction(stmt, closure=self._scope)
+        self._scope.assign(func.name, func)
 
     def evaluate_Literal(self, expr: Literal) -> Any:
         return expr.value
@@ -176,22 +196,20 @@ class Interpreter(NodeVisitor[Any]):
     def evaluate_Variable(self, expr: Variable) -> Any:
         return self._scope.get(expr.name)
 
+    def evaluate_Call(self, expr: Call) -> Any:
+        callee = self.evaluate(expr.callee)
+        if not isinstance(callee, FunctionType):
+            raise EvalError(expr.closing, "can only call functions")
 
-class Scope:
-    def __init__(self, parent: "Scope" = None) -> None:
-        self._parent = parent
-        self._values: dict[str, Any] = {}
+        numargs, arity = len(expr.arguments), callee.arity()
+        if numargs != arity:
+            plural = "" if arity == 1 else "s"
+            message = f"expected {arity} argument{plural}, got {numargs}"
+            raise EvalError(expr.closing, message)
 
-    def assign(self, name: str, value: Any) -> None:
-        self._values[name] = value
+        arguments = [self.evaluate(arg) for arg in expr.arguments]
 
-    def get(self, name: Token) -> Any:
-        try:
-            return self._values[name.lexeme]
-        except KeyError:
-            if self._parent is not None:
-                return self._parent.get(name)
-            raise EvalError(name, f"name {name.lexeme!r} is not defined") from None
+        return callee.call(self, *arguments)
 
 
 def check_number_operand(op: Token, value: Any) -> None:

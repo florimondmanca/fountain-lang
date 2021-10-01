@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ._ast import Token
@@ -37,3 +37,9 @@ class BreakExc(Exception):
 
 class ContinueExc(Exception):
     pass
+
+
+class ReturnExc(Exception):
+    def __init__(self, value: Any) -> None:
+        super().__init__()
+        self.value = value

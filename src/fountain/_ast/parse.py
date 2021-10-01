@@ -5,16 +5,19 @@ from .nodes import (
     Binary,
     Block,
     Break,
+    Call,
     Conjunction,
     Continue,
     Disjunction,
     Expr,
     Expression,
     For,
+    Function,
     Group,
     If,
     Literal,
     Print,
+    Return,
     Stmt,
     Unary,
     Variable,
@@ -25,6 +28,7 @@ from .tokens import Token, TokenType
 def parse(tokens: list[Token]) -> list[Stmt]:
     current = 0
     loop = False
+    inside_function = False
 
     # Helpers.
 
@@ -54,10 +58,10 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             return False
         return peek().type == t
 
-    def consume(t: TokenType, error_message: str) -> None:
+    def consume(t: TokenType, error_message: str) -> Token:
         if check(t):
             movenext()
-            return
+            return previous()
 
         raise ParseError(peek(), error_message)
 
@@ -90,6 +94,12 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             if not loop:
                 raise ParseError(previous(), "continue outside loop")
             return Continue(previous())
+
+        if match(TokenType.FN):
+            return function_statement()
+
+        if match(TokenType.RETURN):
+            return return_statement()
 
         if match(TokenType.ASSERT):
             return assert_statement()
@@ -153,6 +163,41 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         loop = previous
 
         return For(body)
+
+    def function_statement() -> Stmt:
+        nonlocal inside_function
+        prev = inside_function
+        inside_function = True
+
+        name = consume(TokenType.IDENTIFIER, "expected function name")
+
+        consume(TokenType.LEFT_PARENS, "expected '(' after function name")
+
+        parameters = []
+        if not check(TokenType.RIGHT_PARENS):
+            while True:
+                parameters.append(
+                    consume(TokenType.IDENTIFIER, "expected parameter name")
+                )
+                if not match(TokenType.COMMA):
+                    break
+
+        consume(TokenType.RIGHT_PARENS, "expected ')' after parameters")
+
+        body = []
+        while not check(TokenType.END) and not done():
+            body.append(statement())
+        consume(TokenType.END, "expected 'end' to close function")
+
+        inside_function = prev
+
+        return Function(name, parameters, body)
+
+    def return_statement() -> Stmt:
+        if not inside_function:
+            raise ParseError(previous(), "return outside function")
+        expr = None if check(TokenType.END) else expression()
+        return Return(previous(), expr)
 
     def assert_statement() -> Stmt:
         op = previous()
@@ -230,7 +275,32 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             op = previous()
             right = unary()
             return Unary(op, right)
-        return primary()
+        return call()
+
+    def call() -> Expr:
+        expr = primary()
+
+        # NOTE: there may be multiple calls, e.g. f(a, b)(c), where each
+        # call becomes the callee of the next one.
+
+        def finish_call(callee: Expr) -> Expr:
+            arguments = []
+
+            if not check(TokenType.RIGHT_PARENS):
+                arguments.append(expression())
+                while match(TokenType.COMMA):
+                    if len(arguments) >= 255:
+                        raise ParseError(previous(), "more than 255 arguments")
+                    arguments.append(expression())
+
+            closing = consume(TokenType.RIGHT_PARENS, "expected ')' after arguments")
+
+            return Call(callee, arguments, closing)
+
+        while match(TokenType.LEFT_PARENS):
+            expr = finish_call(callee=expr)
+
+        return expr
 
     def primary() -> Expr:
         if match(TokenType.FALSE):
@@ -267,7 +337,7 @@ def parse(tokens: list[Token]) -> list[Stmt]:
                 return
 
             if peek().type in (
-                TokenType.FUN,
+                TokenType.FN,
                 TokenType.FOR,
                 TokenType.IF,
                 TokenType.RETURN,

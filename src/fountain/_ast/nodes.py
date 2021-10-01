@@ -48,6 +48,13 @@ class Variable(Expr):
 
 
 @dataclass
+class Call(Expr):
+    callee: Expr
+    arguments: list[Expr]
+    closing: Token
+
+
+@dataclass
 class Stmt:
     pass
 
@@ -100,3 +107,16 @@ class Assert(Stmt):
 @dataclass
 class Block(Stmt):
     statements: list[Stmt]
+
+
+@dataclass
+class Function(Stmt):
+    name: Token
+    parameters: list[Token]
+    body: list[Stmt]
+
+
+@dataclass
+class Return(Stmt):
+    op: Token
+    expr: Optional[Expr]
