@@ -55,6 +55,7 @@ if __name__ == "__main__":
         "Disjunction   = expressions: list[Expr]",
         "Conjunction   = expressions: list[Expr]",
         "Variable      = name: Token",
+        "Call          = callee: Expr, arguments: list[Expr], closing: Token",
     ]
     stmt_types = [
         "Expression = expression: Expr",
@@ -66,6 +67,8 @@ if __name__ == "__main__":
         "Continue   = op: Token",
         "Assert     = op: Token, test: Expr, message: Optional[Expr]",
         "Block      = statements: list[Stmt]",
+        "Function   = name: Token, parameters: list[Token], body: list[Stmt]",
+        "Return     = op: Token, expr: Optional[Expr]",
     ]
 
     ast = make_ast(

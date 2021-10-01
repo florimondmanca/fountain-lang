@@ -124,7 +124,7 @@ end
 ### Functions
 
 ```lua
-fun f(x, y)
+fn f(x, y)
   return x + y
 end
 

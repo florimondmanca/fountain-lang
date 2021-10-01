@@ -35,3 +35,36 @@ for do
   end
   i = i + 1
 end
+
+print clock()
+
+fn fibo(n)
+  a = 0
+  b = 1
+  temp = 0
+  i = 0
+
+  for do
+    if i >= n do
+      break
+    end
+    temp = a
+    a = b
+    b = temp + b
+    i = i + 1
+  end
+
+  return a
+end
+
+print fibo(1)
+
+fn adder(y)
+  fn add(x)
+    return x + y
+  end
+  return add
+end
+
+add2 = adder(2)
+print add2(1)

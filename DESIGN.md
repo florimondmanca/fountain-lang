@@ -26,6 +26,8 @@ simple_stmt:
   | assert_stmt
   | assign_stmt
   | expr_stmt
+  | fn_stmt
+  | "return" expression?
   | "break"
   | "continue"
 block:
@@ -42,6 +44,10 @@ assign_stmt:
   | IDENTIFIER "=" expression
 expr_stmt:
   | expression
+fn_stmt:
+  | "fn" IDENTIFIER "(" parameters? ")" stmt* "end"
+parameters:
+  | IDENTIFIER ("," IDENTIFIER)*
 
 # Expressions
 expression:
@@ -62,7 +68,12 @@ factor:
   | unary ( ( "*" | "/" ) unary )*
 unary:
   | ( "-" | "not" ) unary
-  | primary;
+  | call
+call:
+  | expression "(" arguments? ")"
+  | primary
+arguments:
+  | expression ("," expression)*
 primary:
   | IDENTIFIER
   | TRUE

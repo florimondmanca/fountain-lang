@@ -115,6 +115,37 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
             """,
             "0\n1\n2\n4\n5\n",
         ),
+        (
+            "fn f() print 'OK' end; f()",
+            # TODO: drop 'nil' after:
+            # https://github.com/florimondmanca/fountain-lang/issues/1
+            "OK\nnil\n",
+        ),
+        (
+            """
+            fn add(x, y)
+                return x + y
+            end
+
+            print add(1, 2)
+            """,
+            "3\n",
+        ),
+        (
+            """
+            fn adder(y)
+                fn add(x)
+                    return x + y
+                end
+                return add
+            end
+
+            add2 = adder(2)
+            print add2(1)
+            print adder(3)(2)
+            """,
+            "3\n5\n",
+        ),
         ("assert true", ""),
         ("-- Comment", ""),
         ("", ""),
@@ -205,6 +236,26 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             "[line 4] error: at end: expected 'end' to close 'for'\n",
             65,
         ),
+        (
+            "fn f end",
+            "[line 1] error: at 'end': expected '(' after function name\n",
+            65,
+        ),
+        (
+            "fn f( end",
+            "[line 1] error: at 'end': expected parameter name\n",
+            65,
+        ),
+        (
+            "fn f(x end",
+            "[line 1] error: at 'end': expected ')' after parameters\n",
+            65,
+        ),
+        (
+            "return 0",
+            "[line 1] error: at 'return': return outside function\n",
+            65,
+        ),
         # Runtime errors
         (
             "1/0",
@@ -234,6 +285,21 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
         (
             "assert not true, 'false!'",
             "[line 1] error: at 'assert': false!\n",
+            70,
+        ),
+        (
+            "fn f(x, y) return x end; f(1)",
+            "[line 1] error: at ')': expected 2 arguments, got 1\n",
+            70,
+        ),
+        (
+            "fn f(x) return x end; f(1, 2)",
+            "[line 1] error: at ')': expected 1 argument, got 2\n",
+            70,
+        ),
+        (
+            "1()",
+            "[line 1] error: at ')': can only call functions\n",
             70,
         ),
     ],
