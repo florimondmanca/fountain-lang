@@ -1,12 +1,16 @@
 # fountain-lang
 
-A toy interpreted programming language, written in Python.
+NO MAINTENANCE INTENDED.
+
+A toy interpreted programming language. Inspired by Lua, implemented in Python.
 
 ```console
 $ fountain app.ft
 ```
 
-Based on https://www.craftinginterpreters.com/, inspired by Lua.
+## Credits
+
+Based on https://www.craftinginterpreters.com/.
 
 ## License
 
