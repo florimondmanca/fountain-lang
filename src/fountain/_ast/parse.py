@@ -18,7 +18,6 @@ from .nodes import (
     Group,
     If,
     Literal,
-    Print,
     Return,
     Stmt,
     Unary,
@@ -82,9 +81,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         if match(TokenType.DO):
             return block()
 
-        if match(TokenType.PRINT):
-            return print_statement()
-
         if match(TokenType.IF):
             return if_statement()
 
@@ -111,10 +107,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             return assert_statement()
 
         return assign_statement()
-
-    def print_statement() -> Stmt:
-        expr = expression()
-        return Print(expr)
 
     def if_statement() -> Stmt:
         test = expression()
@@ -353,7 +345,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             if peek().type in (
                 TokenType.IDENTIFIER,  # x = ..., f()
                 TokenType.DO,
-                TokenType.PRINT,
                 TokenType.FOR,
                 TokenType.IF,
                 TokenType.FN,

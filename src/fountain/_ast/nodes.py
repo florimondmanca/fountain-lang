@@ -71,11 +71,6 @@ class Assign(Stmt):
 
 
 @dataclass
-class Print(Stmt):
-    expression: Expr
-
-
-@dataclass
 class If(Stmt):
     test: Expr
     body: list[Stmt]

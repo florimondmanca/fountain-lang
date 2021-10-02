@@ -17,7 +17,6 @@ from ._ast import (
     If,
     Literal,
     NodeVisitor,
-    Print,
     Return,
     Stmt,
     Token,
@@ -25,7 +24,6 @@ from ._ast import (
     Unary,
     Variable,
 )
-from ._builtins import BUILTINS
 from ._exceptions import BreakExc, ContinueExc, EvalError, ReturnExc
 from ._functions import FunctionType, UserFunction
 from ._scope import Scope
@@ -35,6 +33,8 @@ __all__ = ["Interpreter"]
 
 class Interpreter(NodeVisitor[Any]):
     def __init__(self) -> None:
+        from ._builtins import BUILTINS  # Avoid import cycle.
+
         scope = Scope()
         for name, value in BUILTINS:
             scope.assign(name, value)
@@ -57,10 +57,6 @@ class Interpreter(NodeVisitor[Any]):
 
     def execute_Expression(self, stmt: Expression) -> Any:
         return self.evaluate(stmt.expression)
-
-    def execute_Print(self, stmt: Print) -> None:
-        value = self.evaluate(stmt.expression)
-        print(stringify(value))
 
     def execute_If(self, stmt: If) -> None:
         test = self.evaluate(stmt.test)
