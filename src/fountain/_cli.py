@@ -1,10 +1,11 @@
 import argparse
 import pathlib
 import sys
+from typing import Any
 
 from ._ast import parse, tokenize
 from ._exceptions import EvalError, ParseError, TokenizeError
-from ._interpreter import Interpreter
+from ._interpreter import Interpreter, stringify
 
 
 def main() -> None:
@@ -32,28 +33,27 @@ class CLI:
         else:
             return self._run_prompt()
 
+    def evaluate(self, source: str) -> Any:
+        tokens = tokenize(source)
+        statements = parse(tokens)
+        return self._interpreter.interpret(statements)
+
     def run(self, source: str) -> int:
         try:
-            tokens = tokenize(source)
+            self.evaluate(source)
         except TokenizeError as exc:
             self._report(exc.message, lineno=exc.lineno)
             return 65
-
-        try:
-            statements = parse(tokens)
         except ParseError as exc:
             where = "at end" if exc.at_eof else f"at {exc.token.lexeme!r}"
             self._report(exc.message, lineno=exc.token.lineno, where=where)
             return 65
-
-        try:
-            self._interpreter.interpret(statements)
         except EvalError as exc:
             where = f"at {exc.token.lexeme!r}"
             self._report(exc.message, lineno=exc.token.lineno, where=where)
             return 70
-
-        return 0
+        else:
+            return 0
 
     def _run_file(self, path: str) -> int:
         try:
@@ -78,7 +78,9 @@ class CLI:
             if not line:
                 break
 
-            _ = self.run(line)
+            value = self.evaluate(line)
+            if value is not None:
+                print(stringify(value))
 
         return 0
 

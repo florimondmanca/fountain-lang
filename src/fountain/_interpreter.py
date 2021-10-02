@@ -40,21 +40,23 @@ class Interpreter(NodeVisitor[Any]):
             scope.assign(name, value)
         self._scope = scope
 
-    def interpret(self, statements: list[Stmt]) -> None:
+    def interpret(self, statements: list[Stmt]) -> Any:
+        value: Any = None
         try:
             for stmt in statements:
-                self.execute(stmt)
+                value = self.execute(stmt)
         except EvalError:
             raise
+        else:
+            return value
 
     def execute_Assign(self, stmt: Assign) -> None:
         name = stmt.target.lexeme
         value = self.evaluate(stmt.value)
         self._scope.assign(name, value)
 
-    def execute_Expression(self, stmt: Expression) -> None:
-        value = self.evaluate(stmt.expression)
-        print(stringify(value))
+    def execute_Expression(self, stmt: Expression) -> Any:
+        return self.evaluate(stmt.expression)
 
     def execute_Print(self, stmt: Print) -> None:
         value = self.evaluate(stmt.expression)
