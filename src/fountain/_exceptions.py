@@ -11,6 +11,12 @@ class TokenizeError(RuntimeError):
         self.message = message
 
 
+class TokenizeErrors(RuntimeError):
+    def __init__(self, errors: list[TokenizeError]) -> None:
+        super().__init__()
+        self.errors = errors
+
+
 class ParseError(RuntimeError):
     def __init__(self, token: "Token", message: str) -> None:
         super().__init__(message)
@@ -22,6 +28,12 @@ class ParseError(RuntimeError):
         from ._ast import TokenType
 
         return self.token.type == TokenType.EOF
+
+
+class ParseErrors(RuntimeError):
+    def __init__(self, errors: list[ParseError]) -> None:
+        super().__init__()
+        self.errors = errors
 
 
 class EvalError(RuntimeError):

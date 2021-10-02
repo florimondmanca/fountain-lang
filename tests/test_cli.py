@@ -254,6 +254,35 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             "[line 1] error: at 'return': return outside function\n",
             65,
         ),
+        pytest.param(
+            """
+            x = "valid"
+            !412
+            y = "valid"
+            §invalid
+            """,
+            (
+                "[line 3] error: invalid character: '!'\n"
+                "[line 5] error: invalid character: '§'\n"
+            ),
+            65,
+            id="token-error-multiple",
+        ),
+        pytest.param(
+            """
+            fn valid() end
+            valid())
+            y = "valid"
+            break
+            z = "ok"
+            """,
+            (
+                "[line 3] error: at ')': expected expression\n"
+                "[line 5] error: at 'break': break outside loop\n"
+            ),
+            65,
+            id="parse-error-multiple",
+        ),
         # Runtime errors
         (
             "1/0",

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .._exceptions import ParseError
+from .._exceptions import ParseError, ParseErrors
 from .nodes import (
     Assert,
     Assign,
@@ -333,28 +333,49 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         raise ParseError(peek(), "expected expression")
 
     def synchronize() -> None:
+        # Clear up any contextual state.
+        state.inside_loop = False
+        state.inside_function = False
+
         # Discard next tokens until we hit the beginning of the next statement.
         while True:
             movenext()
 
             if done():
-                break
+                return
+
+            # NOTE: we don't keep track of line ends, so we can only
+            # guesstimate where the next statement starts.
 
             if previous().type == TokenType.END:
                 return
 
             if peek().type in (
-                TokenType.FN,
+                TokenType.IDENTIFIER,  # x = ..., f()
+                TokenType.DO,
+                TokenType.PRINT,
                 TokenType.FOR,
                 TokenType.IF,
+                TokenType.FN,
                 TokenType.RETURN,
+                TokenType.ASSERT,
+                TokenType.SEMICOLON,  # <...> ;
             ):
                 return
 
     statements = []
-    try:
-        while not done():
+    errors = []
+
+    while not done():
+        try:
             statements.append(statement())
-        return statements
-    except ParseError:
-        raise
+        except ParseError as exc:
+            # We want to keep parsing to report as many errors as possible.
+            # Gather errors in a list, synchronize parser state, then carry on.
+            errors.append(exc)
+            synchronize()
+
+    if errors:
+        raise ParseErrors(errors)
+
+    return statements
