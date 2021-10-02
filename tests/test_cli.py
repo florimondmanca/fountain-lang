@@ -8,7 +8,7 @@ from fountain._cli import CLI
 
 
 def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
-    mock_stdin = io.StringIO("print 1 + 2")
+    mock_stdin = io.StringIO("print(1 + 2)")
     monkeypatch.setattr(sys, "stdin", mock_stdin)
 
     CLI().main([])
@@ -20,70 +20,70 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
 @pytest.mark.parametrize(
     "source, result",
     [
-        ("print 1 + 2", "3\n"),
-        ("print -2 * 3", "-6\n"),
-        ("print 2 * (5-3.6)", "2.8\n"),
-        ("print 3/4", "0.75\n"),
-        ("print 'he' + 'llo'", "hello\n"),
-        ("print true and true", "true\n"),
-        ("print true and false", "false\n"),
-        ("print true or false", "true\n"),
-        ("print false or false", "false\n"),
-        ("print nil or true", "true\n"),
-        ("print 1 and 2", "2\n"),
-        ("print 1 or 2", "1\n"),
-        ("print 0 and 2", "0\n"),
-        ("print 1 < 2", "true\n"),
-        ("print 1 <= 2", "true\n"),
-        ("print 2 <= 2", "true\n"),
-        ("print 2 < 2", "false\n"),
-        ("print 3 < 2", "false\n"),
-        ("print 2 > 2", "false\n"),
-        ("print 2 >= 2", "true\n"),
-        ("print 3 >= 2", "true\n"),
-        ("print 3 > 2", "true\n"),
-        ("print 2 == 2", "true\n"),
-        ("print 2 == 2.0", "true\n"),
-        ("print 2 == 2.", "true\n"),
-        ("print 2 != 2", "false\n"),
-        ("print 2 != 2.1", "true\n"),
-        ("print 2 != 'hello'", "true\n"),
-        ("print true and 3 or 2", "3\n"),
-        ("print false and 3 or 2", "2\n"),
-        ("print 1 and 'yes' or 'no'", "yes\n"),
-        ("print 1 and 2 or 4", "2\n"),
-        ("print 0 and 2 or 4", "4\n"),
-        ("print 1 or 2 and 4", "1\n"),
-        ("print 0 or false and 4", "false\n"),
-        ("print 0 or false or 1 and 4", "4\n"),
-        ("print 1 + 2  -- Inline comment", "3\n"),
-        ("x = 3; print x; print x + 2", "3\n5\n"),
-        ("x = 3; print x; print x + 2", "3\n5\n"),
+        ("print(1 + 2)", "3\n"),
+        ("print(-2 * 3)", "-6\n"),
+        ("print(2 * (5-3.6))", "2.8\n"),
+        ("print(3/4)", "0.75\n"),
+        ("print('he' + 'llo')", "hello\n"),
+        ("print(true and true)", "true\n"),
+        ("print(true and false)", "false\n"),
+        ("print(true or false)", "true\n"),
+        ("print(false or false)", "false\n"),
+        ("print(nil or true)", "true\n"),
+        ("print(1 and 2)", "2\n"),
+        ("print(1 or 2)", "1\n"),
+        ("print(0 and 2)", "0\n"),
+        ("print(1 < 2)", "true\n"),
+        ("print(1 <= 2)", "true\n"),
+        ("print(2 <= 2)", "true\n"),
+        ("print(2 < 2)", "false\n"),
+        ("print(3 < 2)", "false\n"),
+        ("print(2 > 2)", "false\n"),
+        ("print(2 >= 2)", "true\n"),
+        ("print(3 >= 2)", "true\n"),
+        ("print(3 > 2)", "true\n"),
+        ("print(2 == 2)", "true\n"),
+        ("print(2 == 2.0)", "true\n"),
+        ("print(2 == 2.)", "true\n"),
+        ("print(2 != 2)", "false\n"),
+        ("print(2 != 2.1)", "true\n"),
+        ("print(2 != 'hello')", "true\n"),
+        ("print(true and 3 or 2)", "3\n"),
+        ("print(false and 3 or 2)", "2\n"),
+        ("print(1 and 'yes' or 'no')", "yes\n"),
+        ("print(1 and 2 or 4)", "2\n"),
+        ("print(0 and 2 or 4)", "4\n"),
+        ("print(1 or 2 and 4)", "1\n"),
+        ("print(0 or false and 4)", "false\n"),
+        ("print(0 or false or 1 and 4)", "4\n"),
+        ("print(1 + 2)  -- Inline comment", "3\n"),
+        ("x = 3; print(x); print(x + 2)", "3\n5\n"),
+        ("x = 3; print(x); print(x + 2)", "3\n5\n"),
         (
             """
             x = 3
-            print x
-            print x + 2
+            print(x)
+            print(x + 2)
             """,
             "3\n5\n",
         ),
         ("do end", ""),
-        ("x = 0; do x = 1; print x; end; print x", "1\n0\n"),
+        ("x = 0; do x = 1; print(x); end; print(x)", "1\n0\n"),
         (
             """
             x = 0
             do
                 x = 1
-                print x
+                print(x)
             end
-            print x
+            print(x)
             """,
             "1\n0\n",
         ),
         (
             """
             if 1 < 2 do
-                print "yep"
+                print("yep")
             end
             """,
             "yep\n",
@@ -91,9 +91,9 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
         (
             """
             if 1 > 2 do
-                print "nah"
+                print("nah")
             else
-                print "yep"
+                print("yep")
             end
             """,
             "yep\n",
@@ -109,14 +109,14 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
                     i = i + 1
                     continue
                 end
-                print i
+                print(i)
                 i = i + 1
             end
             """,
             "0\n1\n2\n4\n5\n",
         ),
         (
-            "fn f() print 'OK' end; f()",
+            "fn f() print('OK') end; f()",
             "OK\n",
         ),
         (
@@ -125,7 +125,7 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
                 return x + y
             end
 
-            print add(1, 2)
+            print(add(1, 2))
             """,
             "3\n",
         ),
@@ -139,8 +139,8 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
             end
 
             add2 = adder(2)
-            print add2(1)
-            print adder(3)(2)
+            print(add2(1))
+            print(adder(3)(2))
             """,
             "3\n5\n",
         ),
@@ -189,7 +189,7 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
         (
             """
             if 1 < 2 do
-                print 'yes'
+                print('yes')
             -- missing 'end'
             """,
             "[line 5] error: at end: expected 'end' to close 'if'\n",
@@ -198,9 +198,9 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
         (
             """
             if 1 < 2 do
-                print 'yes'
+                print('yes')
             else
-                print 'no'
+                print('no')
             -- missing 'end'
             """,
             "[line 7] error: at end: expected 'end' to close 'if'\n",
@@ -229,7 +229,7 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
         (
             """
             for do
-                print "missing end"
+                print("missing end")
             """,
             "[line 4] error: at end: expected 'end' to close 'for'\n",
             65,
@@ -300,7 +300,7 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             70,
         ),
         (
-            "print x",
+            "print(x)",
             "[line 1] error: at 'x': name 'x' is not defined\n",
             70,
         ),

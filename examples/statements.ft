@@ -1,33 +1,33 @@
-print "Hello, world!"
-print true
-print 2 + 2
+print("Hello, world!")
+print(true)
+print(2 + 2)
 
 x = 1
 
 do
   x = 2
-  print x
+  print(x)
 end
 
-do x = 3; print x end
+do x = 3; print(x) end
 
 print x
 
 if 1 < 2 do
-  print "yep"
-  print "yep again"
+  print("yep")
+  print("yep again")
 end
 
 if 1 > 2 do
-  print "nah"
+  print("nah")
 else
-  print "yep"
+  print("yep")
 end
 
 i = 0
 for do
   for do
-    print i + 1
+    print(i + 1)
     break
   end
   if i > 4 do
@@ -36,7 +36,7 @@ for do
   i = i + 1
 end
 
-print clock()
+print(clock())
 
 fn fibo(n)
   a = 0
@@ -57,7 +57,7 @@ fn fibo(n)
   return a
 end
 
-print fibo(1)
+print(fibo(1))
 
 fn adder(y)
   fn add(x)
@@ -67,4 +67,4 @@ fn adder(y)
 end
 
 add2 = adder(2)
-print add2(1)
+print(add2(1))

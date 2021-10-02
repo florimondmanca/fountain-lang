@@ -60,7 +60,6 @@ if __name__ == "__main__":
     stmt_types = [
         "Expression = expression: Expr",
         "Assign     = target: Token, value: Expr",
-        "Print      = expression: Expr",
         "If         = test: Expr, body: list[Stmt], orelse: list[Stmt]",
         "For        = body: list[Stmt]",
         "Break      = op: Token",

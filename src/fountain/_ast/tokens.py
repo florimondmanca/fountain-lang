@@ -49,7 +49,6 @@ class TokenType(Enum):
     IN = auto()  # `in`
     FN = auto()  # `fn`
     RETURN = auto()  # `return`
-    PRINT = auto()  # `print`  # TODO: make it a function later
     ASSERT = auto()  # `assert`  # TODO: make it a function later
     EOF = auto()  # EOF
 
@@ -79,7 +78,6 @@ KEYWORDS = {
     "pass": TokenType.PASS,
     "in": TokenType.IN,
     "fn": TokenType.FN,
-    "print": TokenType.PRINT,
     "assert": TokenType.ASSERT,
     "return": TokenType.RETURN,
 }
