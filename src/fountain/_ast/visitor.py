@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from .nodes import Expr, Stmt
 
@@ -12,11 +12,11 @@ class NodeVisitor(Generic[R]):
         )
         return method(node)
 
-    def execute(self, node: Stmt) -> None:
+    def execute(self, node: Stmt) -> Any:
         method = getattr(
             self, f"execute_{node.__class__.__name__}", self.execute_default
         )
-        method(node)
+        return method(node)
 
     def evaluate_default(self, expr: Expr) -> R:
         raise NotImplementedError(f"Unexpected node: {expr}")  # pragma: no cover

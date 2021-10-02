@@ -117,9 +117,7 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
         ),
         (
             "fn f() print 'OK' end; f()",
-            # TODO: drop 'nil' after:
-            # https://github.com/florimondmanca/fountain-lang/issues/1
-            "OK\nnil\n",
+            "OK\n",
         ),
         (
             """
