@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from .._exceptions import ParseError
 from .nodes import (
     Assert,
@@ -25,26 +27,35 @@ from .nodes import (
 from .tokens import Token, TokenType
 
 
-def parse(tokens: list[Token]) -> list[Stmt]:
+@dataclass
+class State:
     current = 0
-    loop = False
+    inside_loop = False
     inside_function = False
 
+
+def parse(tokens: list[Token]) -> list[Stmt]:
+    state = State()
+
     # Helpers.
+
+    def peek() -> Token:
+        return tokens[state.current]
+
+    def previous() -> Token:
+        return tokens[state.current - 1]
 
     def done() -> bool:
         return peek().type == TokenType.EOF
 
-    def peek() -> Token:
-        return tokens[current]
-
-    def previous() -> Token:
-        return tokens[current - 1]
-
     def movenext() -> None:
-        nonlocal current
         if not done():
-            current += 1
+            state.current += 1
+
+    def check(t: TokenType) -> bool:
+        if done():
+            return False
+        return peek().type == t
 
     def match(*types: TokenType) -> bool:
         for t in types:
@@ -52,11 +63,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
                 movenext()
                 return True
         return False
-
-    def check(t: TokenType) -> bool:
-        if done():
-            return False
-        return peek().type == t
 
     def consume(t: TokenType, error_message: str) -> Token:
         if check(t):
@@ -86,12 +92,12 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             return for_statement()
 
         if match(TokenType.BREAK):
-            if not loop:
+            if not state.inside_loop:
                 raise ParseError(previous(), "break outside loop")
             return Break(previous())
 
         if match(TokenType.CONTINUE):
-            if not loop:
+            if not state.inside_loop:
                 raise ParseError(previous(), "continue outside loop")
             return Continue(previous())
 
@@ -104,23 +110,7 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         if match(TokenType.ASSERT):
             return assert_statement()
 
-        # May be an expression (r-value), or an assignment (l-value = r-value).
-        # Consume left-hand side as if it was an expression,
-        # then make sure it is a valid variable if followed by '='.
-        # This allows arbitrarily long assignment targets while
-        # sticking to one-character lookahead.
-        expr = expression()
-
-        if match(TokenType.EQUAL):
-            equals = previous()
-            if isinstance(expr, Variable):
-                target = expr.name
-                value = expression()
-                return Assign(target, value)
-            dtype = expr.__class__.__name__.lower()
-            raise ParseError(equals, f"cannot assign to {dtype}")
-
-        return Expression(expr)
+        return assign_statement()
 
     def print_statement() -> Stmt:
         expr = expression()
@@ -148,9 +138,8 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         return If(test, body, orelse)
 
     def for_statement() -> Stmt:
-        nonlocal loop
-        previous = loop
-        loop = True
+        prev = state.inside_loop
+        state.inside_loop = True
 
         consume(TokenType.DO, "expected 'do' after 'for'")
 
@@ -160,14 +149,13 @@ def parse(tokens: list[Token]) -> list[Stmt]:
 
         consume(TokenType.END, "expected 'end' to close 'for'")
 
-        loop = previous
+        state.inside_loop = prev
 
         return For(body)
 
     def function_statement() -> Stmt:
-        nonlocal inside_function
-        prev = inside_function
-        inside_function = True
+        prev = state.inside_function
+        state.inside_function = True
 
         name = consume(TokenType.IDENTIFIER, "expected function name")
 
@@ -189,12 +177,12 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             body.append(statement())
         consume(TokenType.END, "expected 'end' to close function")
 
-        inside_function = prev
+        state.inside_function = prev
 
         return Function(name, parameters, body)
 
     def return_statement() -> Stmt:
-        if not inside_function:
+        if not state.inside_function:
             raise ParseError(previous(), "return outside function")
         expr = None if check(TokenType.END) else expression()
         return Return(previous(), expr)
@@ -204,6 +192,25 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         test = expression()
         message = expression() if match(TokenType.COMMA) else None
         return Assert(op, test, message)
+
+    def assign_statement() -> Stmt:
+        # May be `<expr>` or `<name> = <expr>` (assignment).
+        # HACK: consume left-hand side as if it was an expression,
+        # then make sure it is a valid variable if followed by '='.
+        # This allows arbitrarily long assignment targets while
+        # sticking to one-character lookahead.
+        expr = expression()
+
+        if match(TokenType.EQUAL):
+            equals = previous()
+            if isinstance(expr, Variable):
+                target = expr.name
+                value = expression()
+                return Assign(target, value)
+            dtype = expr.__class__.__name__.lower()
+            raise ParseError(equals, f"cannot assign to {dtype}")
+
+        return Expression(expr)
 
     def block() -> Stmt:
         statements = []
