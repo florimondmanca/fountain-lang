@@ -4,7 +4,7 @@ import sys
 from typing import Any
 
 from ._ast import parse, tokenize
-from ._exceptions import EvalError, ParseError, TokenizeError
+from ._exceptions import EvalError, ParseErrors, TokenizeErrors
 from ._interpreter import Interpreter, stringify
 
 
@@ -41,12 +41,14 @@ class CLI:
     def run(self, source: str) -> int:
         try:
             self.evaluate(source)
-        except TokenizeError as exc:
-            self._report(exc.message, lineno=exc.lineno)
+        except TokenizeErrors as exc:
+            for t_exc in exc.errors:
+                self._report(t_exc.message, lineno=t_exc.lineno)
             return 65
-        except ParseError as exc:
-            where = "at end" if exc.at_eof else f"at {exc.token.lexeme!r}"
-            self._report(exc.message, lineno=exc.token.lineno, where=where)
+        except ParseErrors as exc:
+            for p_exc in exc.errors:
+                where = "at end" if p_exc.at_eof else f"at {p_exc.token.lexeme!r}"
+                self._report(p_exc.message, lineno=p_exc.token.lineno, where=where)
             return 65
         except EvalError as exc:
             where = f"at {exc.token.lexeme!r}"

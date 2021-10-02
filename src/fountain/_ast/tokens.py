@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Any, NamedTuple
 
-from .._exceptions import TokenizeError
+from .._exceptions import TokenizeError, TokenizeErrors
 
 
 class TokenType(Enum):
@@ -228,9 +228,19 @@ def tokenize(source: str) -> list[Token]:
         else:
             raise TokenizeError(lineno, f"invalid character: {c!r}")
 
+    errors = []
+
     while not done():
         start = current
-        scan_token()
+        try:
+            scan_token()
+        except TokenizeError as exc:
+            # We want to keep scanning to report as many errors as possible.
+            # Gather errors in a list, then carry on.
+            errors.append(exc)
+
+    if errors:
+        raise TokenizeErrors(errors)
 
     # Add final EOF.
     tokens.append(Token(type=TokenType.EOF, lineno=lineno))
