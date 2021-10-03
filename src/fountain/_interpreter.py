@@ -50,13 +50,22 @@ class Interpreter(NodeVisitor[Any]):
         else:
             return value
 
-    def execute_Assign(self, stmt: Assign) -> None:
-        name = stmt.target.lexeme
-        value = self.evaluate(stmt.value)
-        self._scope.assign(name, value)
+    #
+    # Statements.
+    #
 
-    def execute_Expression(self, stmt: Expression) -> Any:
-        return self.evaluate(stmt.expression)
+    def execute_Block(self, stmt: Block) -> None:
+        scope = Scope(self._scope)
+        self.execute_scoped(stmt.statements, scope)
+
+    def execute_scoped(self, statements: list[Stmt], scope: Scope) -> None:
+        previous_scope = self._scope
+        try:
+            self._scope = scope
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self._scope = previous_scope
 
     def execute_If(self, stmt: If) -> None:
         test = self.evaluate(stmt.test)
@@ -84,6 +93,11 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Continue(self, stmt: Continue) -> None:
         raise Continued()
 
+    def execute_Function(self, stmt: Function) -> Any:
+        defaults = [self.evaluate(default) for default in stmt.defaults]
+        func = UserFunction(stmt, defaults, closure=self._scope)
+        self._scope.assign(func.name, func)
+
     def execute_Return(self, stmt: Return) -> None:
         value = self.evaluate(stmt.expr) if stmt.expr is not None else None
         raise Returned(value)
@@ -102,36 +116,31 @@ class Interpreter(NodeVisitor[Any]):
 
         raise EvalError(stmt.op, message)
 
-    def execute_Block(self, stmt: Block) -> None:
-        scope = Scope(self._scope)
-        self.execute_scoped(stmt.statements, scope)
+    def execute_Assign(self, stmt: Assign) -> None:
+        name = stmt.target.lexeme
+        value = self.evaluate(stmt.value)
+        self._scope.assign(name, value)
 
-    def execute_scoped(self, statements: list[Stmt], scope: Scope) -> None:
-        previous_scope = self._scope
-        try:
-            self._scope = scope
-            for statement in statements:
-                self.execute(statement)
-        finally:
-            self._scope = previous_scope
+    def execute_Expression(self, stmt: Expression) -> Any:
+        return self.evaluate(stmt.expression)
 
-    def execute_Function(self, stmt: Function) -> Any:
-        defaults = [self.evaluate(default) for default in stmt.defaults]
-        func = UserFunction(stmt, defaults, closure=self._scope)
-        self._scope.assign(func.name, func)
+    #
+    # Expressions.
+    #
 
-    def evaluate_Literal(self, expr: Literal) -> Any:
-        return expr.value
+    def evaluate_Disjunction(self, expr: Disjunction) -> Any:
+        for exp in expr.expressions:
+            value = self.evaluate(exp)
+            if is_truthy(value):
+                return value
+        return value
 
-    def evaluate_Unary(self, expr: Unary) -> Any:
-        right = self.evaluate(expr.right)
-
-        if expr.op.type == TokenType.MINUS:
-            check_number_operand(expr.op, right)
-            return -right
-
-        assert expr.op.type == TokenType.NOT
-        return not is_truthy(right)
+    def evaluate_Conjunction(self, expr: Conjunction) -> Any:
+        for exp in expr.expressions:
+            value = self.evaluate(exp)
+            if not is_truthy(value):
+                return value
+        return value
 
     def evaluate_Binary(self, expr: Binary) -> Any:
         left = self.evaluate(expr.left)
@@ -175,25 +184,15 @@ class Interpreter(NodeVisitor[Any]):
         assert expr.op.type == TokenType.BANG_EQUAL
         return left != right
 
-    def evaluate_Group(self, expr: Group) -> Any:
-        return self.evaluate(expr.expression)
+    def evaluate_Unary(self, expr: Unary) -> Any:
+        right = self.evaluate(expr.right)
 
-    def evaluate_Disjunction(self, expr: Disjunction) -> Any:
-        for exp in expr.expressions:
-            value = self.evaluate(exp)
-            if is_truthy(value):
-                return value
-        return value
+        if expr.op.type == TokenType.MINUS:
+            check_number_operand(expr.op, right)
+            return -right
 
-    def evaluate_Conjunction(self, expr: Conjunction) -> Any:
-        for exp in expr.expressions:
-            value = self.evaluate(exp)
-            if not is_truthy(value):
-                return value
-        return value
-
-    def evaluate_Variable(self, expr: Variable) -> Any:
-        return self._scope.get(expr.name)
+        assert expr.op.type == TokenType.NOT
+        return not is_truthy(right)
 
     def evaluate_Call(self, expr: Call) -> Any:
         callee = self.evaluate(expr.callee)
@@ -209,6 +208,15 @@ class Interpreter(NodeVisitor[Any]):
         arguments = bind_arguments(expr, callee, *pos_args, **kw_args)
 
         return callee.call(self, *arguments)
+
+    def evaluate_Literal(self, expr: Literal) -> Any:
+        return expr.value
+
+    def evaluate_Group(self, expr: Group) -> Any:
+        return self.evaluate(expr.expression)
+
+    def evaluate_Variable(self, expr: Variable) -> Any:
+        return self._scope.get(expr.name)
 
 
 class Empty:

@@ -48,34 +48,34 @@ if __name__ == "__main__":
 
     # Syntax: class_name = attr1: type1[, ...]
     expr_types = [
-        "Literal       = value: Any",
-        "Unary         = op: Token, right: Expr",
-        "Binary        = left: Expr, op: Token, right: Expr",
-        "Group         = expression: Expr",
         "Disjunction   = expressions: list[Expr]",
         "Conjunction   = expressions: list[Expr]",
-        "Variable      = name: Token",
+        "Binary        = left: Expr, op: Token, right: Expr",
+        "Unary         = op: Token, right: Expr",
         "Call          = "
         + (
             "callee: Expr, pos_args: list[Expr], "
             "kw_names: list[Token], kw_values: list[Expr], closing: Token"
         ),
+        "Literal       = value: Any",
+        "Group         = expression: Expr",
+        "Variable      = name: Token",
     ]
     stmt_types = [
-        "Expression = expression: Expr",
-        "Assign     = target: Token, value: Expr",
+        "Block      = statements: list[Stmt]",
         "If         = test: Expr, body: list[Stmt], orelse: list[Stmt]",
         "For        = body: list[Stmt]",
         "Break      = op: Token",
         "Continue   = op: Token",
-        "Assert     = op: Token, test: Expr, message: Optional[Expr]",
-        "Block      = statements: list[Stmt]",
         "Function   = "
         + (
             "name: Token, parameters: list[Token], defaults: list[Expr], "
             "body: list[Stmt]"
         ),
         "Return     = op: Token, expr: Optional[Expr]",
+        "Assert     = op: Token, test: Expr, message: Optional[Expr]",
+        "Assign     = target: Token, value: Expr",
+        "Expression = expression: Expr",
     ]
 
     ast = make_ast(

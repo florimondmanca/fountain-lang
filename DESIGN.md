@@ -22,25 +22,19 @@ simple_stmt:
   | block
   | if_stmt
   | for_stmt
+  | "break"
+  | "continue"
+  | fn_stmt
+  | "return" expression?
   | assert_stmt
   | assign_stmt
   | expr_stmt
-  | fn_stmt
-  | "return" expression?
-  | "break"
-  | "continue"
 block:
   | "do" stmt* "end"
 if_stmt:
   | "if" (expression "do" stmt*) | (expression "do" stmt* "else" stmt*) "end"
 for_stmt:
   | "for" "do" stmt* "end"
-assert_stmt:
-  | "assert" expression ("," expression)?
-assign_stmt:
-  | IDENTIFIER "=" expression
-expr_stmt:
-  | expression
 fn_stmt:
   | "fn" IDENTIFIER "(" parameters? ")" stmt* "end"
 parameters:
@@ -50,6 +44,12 @@ param_no_default:
   | IDENTIFIER
 param_with_default:
   | IDENTIFIER "=" expression
+assert_stmt:
+  | "assert" expression ("," expression)?
+assign_stmt:
+  | IDENTIFIER "=" expression
+expr_stmt:
+  | expression
 
 # Expressions
 expression:
