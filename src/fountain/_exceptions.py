@@ -43,15 +43,15 @@ class EvalError(RuntimeError):
         self.message = message
 
 
-class BreakExc(Exception):
+class Broke(Exception):
     pass
 
 
-class ContinueExc(Exception):
+class Continued(Exception):
     pass
 
 
-class ReturnExc(Exception):
+class Returned(Exception):
     def __init__(self, value: Any) -> None:
         super().__init__()
         self.value = value

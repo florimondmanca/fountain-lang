@@ -10,29 +10,6 @@ class Expr:
 
 
 @dataclass
-class Literal(Expr):
-    value: Any
-
-
-@dataclass
-class Unary(Expr):
-    op: Token
-    right: Expr
-
-
-@dataclass
-class Binary(Expr):
-    left: Expr
-    op: Token
-    right: Expr
-
-
-@dataclass
-class Group(Expr):
-    expression: Expr
-
-
-@dataclass
 class Disjunction(Expr):
     expressions: list[Expr]
 
@@ -43,8 +20,16 @@ class Conjunction(Expr):
 
 
 @dataclass
-class Variable(Expr):
-    name: Token
+class Binary(Expr):
+    left: Expr
+    op: Token
+    right: Expr
+
+
+@dataclass
+class Unary(Expr):
+    op: Token
+    right: Expr
 
 
 @dataclass
@@ -57,19 +42,28 @@ class Call(Expr):
 
 
 @dataclass
+class Literal(Expr):
+    value: Any
+
+
+@dataclass
+class Group(Expr):
+    expression: Expr
+
+
+@dataclass
+class Variable(Expr):
+    name: Token
+
+
+@dataclass
 class Stmt:
     pass
 
 
 @dataclass
-class Expression(Stmt):
-    expression: Expr
-
-
-@dataclass
-class Assign(Stmt):
-    target: Token
-    value: Expr
+class Block(Stmt):
+    statements: list[Stmt]
 
 
 @dataclass
@@ -95,18 +89,6 @@ class Continue(Stmt):
 
 
 @dataclass
-class Assert(Stmt):
-    op: Token
-    test: Expr
-    message: Optional[Expr]
-
-
-@dataclass
-class Block(Stmt):
-    statements: list[Stmt]
-
-
-@dataclass
 class Function(Stmt):
     name: Token
     parameters: list[Token]
@@ -118,3 +100,21 @@ class Function(Stmt):
 class Return(Stmt):
     op: Token
     expr: Optional[Expr]
+
+
+@dataclass
+class Assert(Stmt):
+    op: Token
+    test: Expr
+    message: Optional[Expr]
+
+
+@dataclass
+class Assign(Stmt):
+    target: Token
+    value: Expr
+
+
+@dataclass
+class Expression(Stmt):
+    expression: Expr

@@ -88,14 +88,10 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             return for_statement()
 
         if match(TokenType.BREAK):
-            if not state.inside_loop:
-                raise ParseError(previous(), "break outside loop")
-            return Break(previous())
+            return break_statement()
 
         if match(TokenType.CONTINUE):
-            if not state.inside_loop:
-                raise ParseError(previous(), "continue outside loop")
-            return Continue(previous())
+            return continue_statement()
 
         if match(TokenType.FN):
             return function_statement()
@@ -107,6 +103,13 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             return assert_statement()
 
         return assign_statement()
+
+    def block() -> Stmt:
+        statements = []
+        while not check(TokenType.END) and not done():
+            statements.append(statement())
+        consume(TokenType.END, "expected 'end' after block")
+        return Block(statements)
 
     def if_statement() -> Stmt:
         test = expression()
@@ -144,6 +147,16 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         state.inside_loop = prev
 
         return For(body)
+
+    def break_statement() -> Stmt:
+        if not state.inside_loop:
+            raise ParseError(previous(), "break outside loop")
+        return Break(previous())
+
+    def continue_statement() -> Stmt:
+        if not state.inside_loop:
+            raise ParseError(previous(), "continue outside loop")
+        return Continue(previous())
 
     def function_statement() -> Stmt:
         prev = state.inside_function
@@ -221,13 +234,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             raise ParseError(equals, f"cannot assign to {dtype}")
 
         return Expression(expr)
-
-    def block() -> Stmt:
-        statements = []
-        while not check(TokenType.END) and not done():
-            statements.append(statement())
-        consume(TokenType.END, "expected 'end' after block")
-        return Block(statements)
 
     def expression() -> Expr:
         return disjunction()
