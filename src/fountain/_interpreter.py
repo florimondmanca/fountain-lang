@@ -25,9 +25,9 @@ from ._ast import (
     Unary,
     Variable,
 )
+from ._environment import Environment
 from ._exceptions import Broke, Continued, EvalError, Returned
 from ._functions import FunctionType, UserFunction
-from ._scope import Scope
 
 __all__ = ["Interpreter"]
 
@@ -36,13 +36,13 @@ class Interpreter(NodeVisitor[Any]):
     def __init__(self) -> None:
         from ._builtins import BUILTINS  # Avoid import cycle.
 
-        scope = Scope()
+        environment = Environment()
         for name, value in BUILTINS:
-            scope.assign(name, value)
+            environment.assign(name, value)
 
-        self._globals = scope
-        self._scope = scope
-        self._locals: dict[Expr, int] = {}  # {variable: scope depth, ...}
+        self._globals = environment
+        self._environment = environment
+        self._locals: dict[Expr, int] = {}  # {variable: env depth, ...}
 
     def interpret(self, statements: list[Stmt]) -> Any:
         value: Any = None
@@ -62,17 +62,19 @@ class Interpreter(NodeVisitor[Any]):
     #
 
     def execute_Block(self, stmt: Block) -> None:
-        scope = Scope(self._scope)
-        self._execute_in_scope(stmt.statements, scope)
+        environment = Environment(self._environment)
+        self._execute_in_environment(stmt.statements, environment)
 
-    def _execute_in_scope(self, statements: list[Stmt], scope: Scope) -> None:
-        previous_scope = self._scope
+    def _execute_in_environment(
+        self, statements: list[Stmt], environment: Environment
+    ) -> None:
+        previous = self._environment
         try:
-            self._scope = scope
+            self._environment = environment
             for statement in statements:
                 self.execute(statement)
         finally:
-            self._scope = previous_scope
+            self._environment = previous
 
     def execute_If(self, stmt: If) -> None:
         test = self.evaluate(stmt.test)
@@ -103,9 +105,12 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Function(self, stmt: Function) -> Any:
         defaults = [self.evaluate(default) for default in stmt.defaults]
         func = UserFunction(
-            stmt, defaults, closure=self._scope, execute=self._execute_in_scope
+            stmt,
+            defaults,
+            closure=self._environment,
+            execute=self._execute_in_environment,
         )
-        self._scope.assign(func.name, func)
+        self._environment.assign(func.name, func)
 
     def execute_Return(self, stmt: Return) -> None:
         value = self.evaluate(stmt.expr) if stmt.expr is not None else None
@@ -128,7 +133,7 @@ class Interpreter(NodeVisitor[Any]):
     def execute_Assign(self, stmt: Assign) -> None:
         name = stmt.target.lexeme
         value = self.evaluate(stmt.value)
-        self._scope.assign(name, value)
+        self._environment.assign(name, value)
 
     def execute_Expression(self, stmt: Expression) -> Any:
         return self.evaluate(stmt.expression)
@@ -227,7 +232,7 @@ class Interpreter(NodeVisitor[Any]):
     def evaluate_Variable(self, expr: Variable) -> Any:
         depth = self._locals.get(expr)
         if depth is not None:
-            return self._scope.get_at(depth, expr.name)
+            return self._environment.get_at(depth, expr.name)
         return self._globals.get(expr.name)
 
 

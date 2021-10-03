@@ -4,13 +4,13 @@ from ._ast import Token
 from ._exceptions import EvalError
 
 
-class Scope:
-    def __init__(self, parent: "Scope" = None) -> None:
+class Environment:
+    def __init__(self, parent: "Environment" = None) -> None:
         self._parent = parent
         self._values: dict[str, Any] = {}
 
     @property
-    def parent(self) -> Optional["Scope"]:
+    def parent(self) -> Optional["Environment"]:
         return self._parent
 
     def assign(self, name: str, value: Any) -> None:

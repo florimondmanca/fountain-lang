@@ -59,20 +59,20 @@ class Resolver(NodeVisitor[Any]):
 
     def __init__(self, interpreter: "Interpreter") -> None:
         self._interpreter = interpreter
-        self._scopestack: list[dict[str, bool]] = []
+        self._scopes: list[dict[str, bool]] = []
         self._current_loop = ""
         self._current_function = ""
 
     @contextmanager
     def _scope(self) -> Iterator[None]:
-        self._scopestack.append({})
+        self._scopes.append({})
         yield
-        self._scopestack.pop()
+        self._scopes.pop()
 
     def _define(self, name: Token) -> None:
-        if not self._scopestack:
+        if not self._scopes:
             return
-        current_scope = self._scopestack[-1]
+        current_scope = self._scopes[-1]
         current_scope[name.lexeme] = True
 
     # Statements.
@@ -172,7 +172,7 @@ class Resolver(NodeVisitor[Any]):
     def evaluate_Variable(self, expr: Variable) -> None:
         # Let the interpreter know which depth the variable is located at.
         # Walk up from inner-most to outer-most scope.
-        for depth, scope in enumerate(reversed(self._scopestack)):
+        for depth, scope in enumerate(reversed(self._scopes)):
             if expr.name.lexeme in scope:
                 self._interpreter.on_resolve(expr, depth)
                 break

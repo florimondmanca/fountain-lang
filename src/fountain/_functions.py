@@ -1,8 +1,8 @@
 from typing import Any, Callable
 
 from ._ast import Function, Stmt
+from ._environment import Environment
 from ._exceptions import Returned
-from ._scope import Scope
 
 
 class FunctionType:
@@ -26,8 +26,8 @@ class UserFunction(FunctionType):
         self,
         stmt: Function,
         defaults: list[Any],
-        closure: Scope,
-        execute: Callable[[list[Stmt], Scope], None],
+        closure: Environment,
+        execute: Callable[[list[Stmt], Environment], None],
     ) -> None:
         self._stmt = stmt
         self._defaults = defaults
@@ -47,13 +47,13 @@ class UserFunction(FunctionType):
         return self._defaults
 
     def call(self, *arguments: Any) -> Any:
-        scope = Scope(self._closure)
+        environment = Environment(self._closure)
 
         for i, param in enumerate(self._stmt.parameters):
-            scope.assign(param.lexeme, arguments[i])
+            environment.assign(param.lexeme, arguments[i])
 
         try:
-            self._execute(self._stmt.body, scope)
+            self._execute(self._stmt.body, environment)
         except Returned as exc:
             return exc.value
         else:
