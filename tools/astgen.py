@@ -18,7 +18,7 @@ def make_ast(groups: list[tuple[str, list[str]]]) -> str:
     for basename, types in groups:
         lines += [
             "",
-            "@dataclass",
+            "@dataclass(frozen=True)",
             f"class {basename}:",
             "    pass",
             "",
@@ -31,7 +31,7 @@ def make_ast(groups: list[tuple[str, list[str]]]) -> str:
             fields = [f.strip() for f in fieldspec.strip().split(",") if f] or ["pass"]
             lines += [
                 "",
-                "@dataclass",
+                "@dataclass(frozen=True)",
                 f"class {name}({basename}):",
                 *(f"    {field}" for field in fields),
                 "",
