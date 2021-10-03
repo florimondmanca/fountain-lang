@@ -55,7 +55,11 @@ if __name__ == "__main__":
         "Disjunction   = expressions: list[Expr]",
         "Conjunction   = expressions: list[Expr]",
         "Variable      = name: Token",
-        "Call          = callee: Expr, arguments: list[Expr], closing: Token",
+        "Call          = "
+        + (
+            "callee: Expr, pos_args: list[Expr], "
+            "kw_names: list[Token], kw_values: list[Expr], closing: Token"
+        ),
     ]
     stmt_types = [
         "Expression = expression: Expr",
@@ -66,7 +70,11 @@ if __name__ == "__main__":
         "Continue   = op: Token",
         "Assert     = op: Token, test: Expr, message: Optional[Expr]",
         "Block      = statements: list[Stmt]",
-        "Function   = name: Token, parameters: list[Token], body: list[Stmt]",
+        "Function   = "
+        + (
+            "name: Token, parameters: list[Token], defaults: list[Expr], "
+            "body: list[Stmt]"
+        ),
         "Return     = op: Token, expr: Optional[Expr]",
     ]
 

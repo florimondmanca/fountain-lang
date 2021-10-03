@@ -144,6 +144,46 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
             """,
             "3\n5\n",
         ),
+        pytest.param(
+            """
+            fn f(x, y=0, z=1) return x + y + z end
+            print(f(2))
+            """,
+            "3\n",
+            id="function-apply-defaults",
+        ),
+        pytest.param(
+            """
+            fn f(x, y=0, z=1) return x + y + z end
+            print(f(2, 3))
+            """,
+            "6\n",
+            id="function-positional-kwarg",
+        ),
+        pytest.param(
+            """
+            fn f(x, y=0, z=1) return x + y + z end
+            print(f(2, y=3))
+            """,
+            "6\n",
+            id="function-kwarg",
+        ),
+        pytest.param(
+            """
+            fn f(x, y=0, z=1) return x + y + z end
+            print(f(2, z=4))
+            """,
+            "6\n",
+            id="function-default-and-kwarg",
+        ),
+        pytest.param(
+            """
+            fn f(x, y=0, z=1) return x + y + z end
+            print(f(x=2, y=3, z=4))
+            """,
+            "9\n",
+            id="function-all-kwargs",
+        ),
         ("assert true", ""),
         ("-- Comment", ""),
         ("", ""),
@@ -256,6 +296,24 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
         ),
         pytest.param(
             """
+            fn f(x, y, z=0) return x + y + z end
+            f(1, z=2, 3)
+            """,
+            "[line 3] error: at '3': non-default argument follows default argument\n",
+            65,
+            id="non-default-after-default",
+        ),
+        pytest.param(
+            """
+            fn f(x) end
+            f(2=0)
+            """,
+            "[line 3] error: at '2': argument name must be an identifier\n",
+            65,
+            id="non-default-after-default",
+        ),
+        pytest.param(
+            """
             x = "valid"
             !412
             y = "valid"
@@ -314,15 +372,41 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             "[line 1] error: at 'assert': false!\n",
             70,
         ),
-        (
-            "fn f(x, y) return x end; f(1)",
-            "[line 1] error: at ')': expected 2 arguments, got 1\n",
+        pytest.param(
+            """
+            fn f(x, y, z=0) return x + y + z end
+            f(1)
+            """,
+            "[line 3] error: at ')': missing 1 positional argument: 'y'\n",
             70,
+            id="missing-pos-arg",
         ),
-        (
-            "fn f(x) return x end; f(1, 2)",
-            "[line 1] error: at ')': expected 1 argument, got 2\n",
+        pytest.param(
+            """
+            fn f(x, y, z=0) return x + y + z end
+            f(1, 2, y=3)
+            """,
+            "[line 3] error: at ')': got multiple values for argument 'y'\n",
             70,
+            id="duplicate-kwarg",
+        ),
+        pytest.param(
+            """
+            fn f(x, y, z=0) return x + y + z end
+            f(1, 2, 3, 4)
+            """,
+            "[line 3] error: at ')': expected 3 arguments, got 4\n",
+            70,
+            id="too-many-args",
+        ),
+        pytest.param(
+            """
+            fn f(x, y, z=0) return x + y + z end
+            f(1, 2, t=2)
+            """,
+            "[line 3] error: at ')': got an unexpected keyword argument: 't'\n",
+            70,
+            id="unexpected-kwarg",
         ),
         (
             "1()",

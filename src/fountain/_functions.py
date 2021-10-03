@@ -9,7 +9,12 @@ if TYPE_CHECKING:
 
 
 class FunctionType:
-    def arity(self) -> int:
+    @property
+    def parameters(self) -> list[str]:
+        raise NotImplementedError  # pragma: no cover
+
+    @property
+    def defaults(self) -> list[Any]:
         raise NotImplementedError  # pragma: no cover
 
     def call(self, interpreter: "Interpreter", *arguments: Any) -> Any:
@@ -20,16 +25,22 @@ class FunctionType:
 
 
 class UserFunction(FunctionType):
-    def __init__(self, stmt: Function, closure: Scope) -> None:
+    def __init__(self, stmt: Function, defaults: list[Any], closure: Scope) -> None:
         self._stmt = stmt
+        self._defaults = defaults
         self._closure = closure
 
     @property
     def name(self) -> str:
         return self._stmt.name.lexeme
 
-    def arity(self) -> int:
-        return len(self._stmt.parameters)
+    @property
+    def parameters(self) -> list[str]:
+        return [param.lexeme for param in self._stmt.parameters]
+
+    @property
+    def defaults(self) -> list[Any]:
+        return self._defaults
 
     def call(self, interpreter: "Interpreter", *arguments: Any) -> Any:
         scope = Scope(self._closure)

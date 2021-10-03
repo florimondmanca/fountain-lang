@@ -47,7 +47,12 @@ expr_stmt:
 fn_stmt:
   | "fn" IDENTIFIER "(" parameters? ")" stmt* "end"
 parameters:
-  | IDENTIFIER ("," IDENTIFIER)*
+  | param_no_default+ param_with_default*
+  | param_with_default+
+param_no_default:
+  | IDENTIFIER
+param_with_default:
+  | IDENTIFIER "=" expression
 
 # Expressions
 expression:
@@ -73,7 +78,14 @@ call:
   | expression "(" arguments? ")"
   | primary
 arguments:
+  | pos_args ("," kw_args)?
+  | kw_args
+pos_args:
   | expression ("," expression)*
+kw_args:
+  | kw_arg ("," kw_arg)*
+kw_arg:
+  | IDENTIFIER "=" expression
 primary:
   | IDENTIFIER
   | TRUE
