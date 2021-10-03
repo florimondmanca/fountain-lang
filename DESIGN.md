@@ -20,7 +20,6 @@ stmt:
   | simple_stmt ";"?
 simple_stmt:
   | block
-  | print_stmt
   | if_stmt
   | for_stmt
   | assert_stmt
@@ -32,8 +31,6 @@ simple_stmt:
   | "continue"
 block:
   | "do" stmt* "end"
-print_stmt:
-  | "print" expression
 if_stmt:
   | "if" (expression "do" stmt*) | (expression "do" stmt* "else" stmt*) "end"
 for_stmt:
