@@ -34,25 +34,34 @@ class CLI:
             return self._run_prompt()
 
     def evaluate(self, source: str) -> Any:
-        tokens = tokenize(source)
-        statements = parse(tokens)
-        return self._interpreter.interpret(statements)
-
-    def run(self, source: str) -> int:
         try:
-            self.evaluate(source)
+            tokens = tokenize(source)
         except TokenizeErrors as exc:
             for t_exc in exc.errors:
                 self._report(t_exc.message, lineno=t_exc.lineno)
-            return 65
+            raise
+
+        try:
+            statements = parse(tokens)
         except ParseErrors as exc:
             for p_exc in exc.errors:
                 where = "at end" if p_exc.at_eof else f"at {p_exc.token.lexeme!r}"
                 self._report(p_exc.message, lineno=p_exc.token.lineno, where=where)
-            return 65
+            raise
+
+        try:
+            return self._interpreter.interpret(statements)
         except EvalError as exc:
             where = f"at {exc.token.lexeme!r}"
             self._report(exc.message, lineno=exc.token.lineno, where=where)
+            raise
+
+    def run(self, source: str) -> int:
+        try:
+            self.evaluate(source)
+        except (TokenizeErrors, ParseErrors):
+            return 65
+        except EvalError:
             return 70
         else:
             return 0
@@ -80,9 +89,13 @@ class CLI:
             if not line:
                 break
 
-            value = self.evaluate(line)
-            if value is not None:
-                print(stringify(value))
+            try:
+                value = self.evaluate(line)
+            except (TokenizeErrors, ParseErrors, EvalError):
+                pass
+            else:
+                if value is not None:
+                    print(stringify(value))
 
         return 0
 
