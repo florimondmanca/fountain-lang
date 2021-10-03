@@ -2,14 +2,14 @@ import time
 from typing import Any
 
 from ._functions import FunctionType
-from ._interpreter import Interpreter, stringify
+from ._interpreter import stringify
 
 
 class Clock(FunctionType):
     parameters: list[str] = []
     defaults: list[str] = []
 
-    def call(self, interpreter: Interpreter, *arguments: Any) -> Any:
+    def call(self, *arguments: Any) -> Any:
         return time.time()
 
     def __str__(self) -> str:
@@ -20,7 +20,7 @@ class Print(FunctionType):
     parameters = ["value"]
     defaults = [""]
 
-    def call(self, interpreter: Interpreter, *arguments: Any) -> Any:
+    def call(self, *arguments: Any) -> Any:
         (value,) = arguments
         print(stringify(value))
 

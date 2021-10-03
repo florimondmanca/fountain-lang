@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any, Callable
 
-from ._ast import Function
+from ._ast import Function, Stmt
 from ._exceptions import Returned
 from ._scope import Scope
-
-if TYPE_CHECKING:
-    from ._interpreter import Interpreter
 
 
 class FunctionType:
@@ -17,7 +14,7 @@ class FunctionType:
     def defaults(self) -> list[Any]:
         raise NotImplementedError  # pragma: no cover
 
-    def call(self, interpreter: "Interpreter", *arguments: Any) -> Any:
+    def call(self, *arguments: Any) -> Any:
         raise NotImplementedError  # pragma: no cover
 
     def __str__(self) -> str:
@@ -25,10 +22,17 @@ class FunctionType:
 
 
 class UserFunction(FunctionType):
-    def __init__(self, stmt: Function, defaults: list[Any], closure: Scope) -> None:
+    def __init__(
+        self,
+        stmt: Function,
+        defaults: list[Any],
+        closure: Scope,
+        execute: Callable[[list[Stmt], Scope], None],
+    ) -> None:
         self._stmt = stmt
         self._defaults = defaults
         self._closure = closure
+        self._execute = execute
 
     @property
     def name(self) -> str:
@@ -42,14 +46,14 @@ class UserFunction(FunctionType):
     def defaults(self) -> list[Any]:
         return self._defaults
 
-    def call(self, interpreter: "Interpreter", *arguments: Any) -> Any:
+    def call(self, *arguments: Any) -> Any:
         scope = Scope(self._closure)
 
         for i, param in enumerate(self._stmt.parameters):
             scope.assign(param.lexeme, arguments[i])
 
         try:
-            interpreter.execute_scoped(self._stmt.body, scope)
+            self._execute(self._stmt.body, scope)
         except Returned as exc:
             return exc.value
         else:

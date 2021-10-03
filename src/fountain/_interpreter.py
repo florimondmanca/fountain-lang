@@ -56,9 +56,9 @@ class Interpreter(NodeVisitor[Any]):
 
     def execute_Block(self, stmt: Block) -> None:
         scope = Scope(self._scope)
-        self.execute_scoped(stmt.statements, scope)
+        self._execute_in_scope(stmt.statements, scope)
 
-    def execute_scoped(self, statements: list[Stmt], scope: Scope) -> None:
+    def _execute_in_scope(self, statements: list[Stmt], scope: Scope) -> None:
         previous_scope = self._scope
         try:
             self._scope = scope
@@ -95,7 +95,9 @@ class Interpreter(NodeVisitor[Any]):
 
     def execute_Function(self, stmt: Function) -> Any:
         defaults = [self.evaluate(default) for default in stmt.defaults]
-        func = UserFunction(stmt, defaults, closure=self._scope)
+        func = UserFunction(
+            stmt, defaults, closure=self._scope, execute=self._execute_in_scope
+        )
         self._scope.assign(func.name, func)
 
     def execute_Return(self, stmt: Return) -> None:
@@ -207,7 +209,7 @@ class Interpreter(NodeVisitor[Any]):
 
         arguments = bind_arguments(expr, callee, *pos_args, **kw_args)
 
-        return callee.call(self, *arguments)
+        return callee.call(*arguments)
 
     def evaluate_Literal(self, expr: Literal) -> Any:
         return expr.value
