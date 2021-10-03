@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator
 
+from .._exceptions import ParseError, ParseErrors
 from .nodes import (
     Assert,
     Assign,
@@ -31,8 +32,16 @@ if TYPE_CHECKING:
 
 def resolve(interpreter: "Interpreter", statements: list[Stmt]) -> None:
     resolver = Resolver(interpreter)
+    errors = []
+
     for stmt in statements:
-        resolver.execute(stmt)
+        try:
+            resolver.execute(stmt)
+        except ParseError as exc:
+            errors.append(exc)
+
+    if errors:
+        raise ParseErrors(errors)
 
 
 class Resolver(NodeVisitor[Any]):
@@ -51,6 +60,8 @@ class Resolver(NodeVisitor[Any]):
     def __init__(self, interpreter: "Interpreter") -> None:
         self._interpreter = interpreter
         self._scopestack: list[dict[str, bool]] = []
+        self._current_loop = ""
+        self._current_function = ""
 
     @contextmanager
     def _scope(self) -> Iterator[None]:
@@ -79,17 +90,27 @@ class Resolver(NodeVisitor[Any]):
             self.execute(s)
 
     def execute_For(self, stmt: For) -> None:
+        enclosing_loop = self._current_loop
+        self._current_loop = "for"
+
         for s in stmt.body:
             self.execute(s)
 
+        self._current_loop = enclosing_loop
+
     def execute_Break(self, stmt: Break) -> None:
-        pass
+        if not self._current_loop:
+            raise ParseError(stmt.op, "break outside loop")
 
     def execute_Continue(self, stmt: Continue) -> None:
-        pass
+        if not self._current_loop:
+            raise ParseError(stmt.op, "continue outside loop")
 
     def execute_Function(self, stmt: Function) -> None:
         self._define(stmt.name)
+
+        enclosing_function = self._current_function
+        self._current_function = "function"
 
         with self._scope():
             for param in stmt.parameters:
@@ -97,7 +118,12 @@ class Resolver(NodeVisitor[Any]):
             for s in stmt.body:
                 self.execute(s)
 
+        self._current_function = enclosing_function
+
     def execute_Return(self, stmt: Return) -> None:
+        if not self._current_function:
+            raise ParseError(stmt.op, "return outside function")
+
         if stmt.expr is not None:
             self.evaluate(stmt.expr)
 

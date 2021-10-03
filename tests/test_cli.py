@@ -368,16 +368,28 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             """
             fn valid() end
             valid())
-            y = "valid"
-            break
-            z = "ok"
+            y = "valid"+
             """,
             (
                 "[line 3] error: at ')': expected expression\n"
-                "[line 5] error: at 'break': break outside loop\n"
+                "[line 5] error: at end: expected expression\n"
             ),
             65,
             id="parse-error-multiple",
+        ),
+        pytest.param(
+            """
+            return 0
+            break
+            continue
+            """,
+            (
+                "[line 2] error: at 'return': return outside function\n"
+                "[line 3] error: at 'break': break outside loop\n"
+                "[line 4] error: at 'continue': continue outside loop\n"
+            ),
+            65,
+            id="parse-error-resolver",
         ),
         # Runtime errors
         (

@@ -43,13 +43,12 @@ class CLI:
 
         try:
             statements = parse(tokens)
+            resolve(self._interpreter, statements)
         except ParseErrors as exc:
             for p_exc in exc.errors:
                 where = "at end" if p_exc.at_eof else f"at {p_exc.token.lexeme!r}"
                 self._report(p_exc.message, lineno=p_exc.token.lineno, where=where)
             raise
-
-        resolve(self._interpreter, statements)
 
         try:
             return self._interpreter.interpret(statements)
