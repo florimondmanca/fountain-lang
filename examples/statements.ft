@@ -68,3 +68,12 @@ end
 
 add2 = adder(2)
 print(add2(1))
+
+fn f(x, y=0)
+  print(x + y)
+end
+
+f(2)
+f(2, 3)
+f(2, y=3)
+f(x=2, y=3)

@@ -50,7 +50,9 @@ class Variable(Expr):
 @dataclass
 class Call(Expr):
     callee: Expr
-    arguments: list[Expr]
+    pos_args: list[Expr]
+    kw_names: list[Token]
+    kw_values: list[Expr]
     closing: Token
 
 
@@ -108,6 +110,7 @@ class Block(Stmt):
 class Function(Stmt):
     name: Token
     parameters: list[Token]
+    defaults: list[Expr]
     body: list[Stmt]
 
 

@@ -153,14 +153,32 @@ def parse(tokens: list[Token]) -> list[Stmt]:
 
         consume(TokenType.LEFT_PARENS, "expected '(' after function name")
 
-        parameters = []
+        parameters = []  # N = n + m elements (n no-default, m with-default)
+        defaults = []  # m elements
+        expect_default = False
+        num_no_default = 0
+
         if not check(TokenType.RIGHT_PARENS):
             while True:
                 parameters.append(
                     consume(TokenType.IDENTIFIER, "expected parameter name")
                 )
+
+                if match(TokenType.EQUAL):
+                    # Start parsing parameters with defaults.
+                    expect_default = True
+                    defaults.append(expression())
+                elif expect_default:
+                    raise ParseError(
+                        previous(), "non-default parameter follows default parameter"
+                    )
+                else:
+                    num_no_default += 1
+
                 if not match(TokenType.COMMA):
                     break
+
+        assert len(parameters) == num_no_default + len(defaults)
 
         consume(TokenType.RIGHT_PARENS, "expected ')' after parameters")
 
@@ -171,7 +189,7 @@ def parse(tokens: list[Token]) -> list[Stmt]:
 
         state.inside_function = prev
 
-        return Function(name, parameters, body)
+        return Function(name, parameters, defaults, body)
 
     def return_statement() -> Stmt:
         if not state.inside_function:
@@ -283,18 +301,42 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         # call becomes the callee of the next one.
 
         def finish_call(callee: Expr) -> Expr:
-            arguments = []
+            pos_args: list[Expr] = []
+            kw_names: list[Token] = []
+            kw_values = []
+            expect_kwarg = False
 
             if not check(TokenType.RIGHT_PARENS):
-                arguments.append(expression())
-                while match(TokenType.COMMA):
-                    if len(arguments) >= 255:
+                while True:
+                    if len(pos_args) + len(kw_names) >= 255:
                         raise ParseError(previous(), "more than 255 arguments")
-                    arguments.append(expression())
+
+                    value = expression()
+                    valuetoken = previous()
+
+                    if match(TokenType.EQUAL):
+                        if not isinstance(value, Variable):
+                            raise ParseError(
+                                valuetoken, "argument name must be an identifier"
+                            )
+                        expect_kwarg = True
+                        kw_names.append(value.name)
+                        kw_values.append(expression())
+                    elif expect_kwarg:
+                        raise ParseError(
+                            previous(), "non-default argument follows default argument"
+                        )
+                    else:
+                        pos_args.append(value)
+
+                    if not match(TokenType.COMMA):
+                        break
+
+            assert len(kw_names) == len(kw_values)
 
             closing = consume(TokenType.RIGHT_PARENS, "expected ')' after arguments")
 
-            return Call(callee, arguments, closing)
+            return Call(callee, pos_args, kw_names, kw_values, closing)
 
         while match(TokenType.LEFT_PARENS):
             expr = finish_call(callee=expr)

@@ -116,7 +116,8 @@ class Interpreter(NodeVisitor[Any]):
             self._scope = previous_scope
 
     def execute_Function(self, stmt: Function) -> Any:
-        func = UserFunction(stmt, closure=self._scope)
+        defaults = [self.evaluate(default) for default in stmt.defaults]
+        func = UserFunction(stmt, defaults, closure=self._scope)
         self._scope.assign(func.name, func)
 
     def evaluate_Literal(self, expr: Literal) -> Any:
@@ -199,15 +200,85 @@ class Interpreter(NodeVisitor[Any]):
         if not isinstance(callee, FunctionType):
             raise EvalError(expr.closing, "can only call functions")
 
-        numargs, arity = len(expr.arguments), callee.arity()
-        if numargs != arity:
-            plural = "" if arity == 1 else "s"
-            message = f"expected {arity} argument{plural}, got {numargs}"
-            raise EvalError(expr.closing, message)
+        pos_args = [self.evaluate(arg) for arg in expr.pos_args]
+        kw_args = {
+            name.lexeme: self.evaluate(value)
+            for name, value in zip(expr.kw_names, expr.kw_values)
+        }
 
-        arguments = [self.evaluate(arg) for arg in expr.arguments]
+        arguments = bind_arguments(expr, callee, *pos_args, **kw_args)
 
         return callee.call(self, *arguments)
+
+
+class Empty:
+    pass
+
+
+EMPTY = Empty()
+
+
+def bind_arguments(
+    expr: Call, callee: FunctionType, *args: Any, **kwargs: Any
+) -> list[Any]:
+    # Follow Python's algorithm:
+    # https://docs.python.org/3/reference/expressions.html#calls
+
+    token = expr.closing
+
+    slots = [EMPTY for _ in callee.parameters]
+
+    # Put the N positional arguments in the first N slots.
+    for i, arg in enumerate(args):
+        try:
+            slots[i] = arg
+        except IndexError:
+            arity = len(callee.parameters)
+            plural = "" if arity == 1 else "s"
+            raise EvalError(
+                token, f"expected {arity} argument{plural}, got {len(args)}"
+            )
+
+    # Fill in corresponding slots for keyword arguments.
+    for name, kwarg in kwargs.items():
+        try:
+            i = callee.parameters.index(name)
+        except ValueError:
+            raise EvalError(token, f"got an unexpected keyword argument: {name!r}")
+
+        if slots[i] is not EMPTY:
+            raise EvalError(token, f"got multiple values for argument {name!r}")
+
+        slots[i] = kwarg
+
+    try:
+        slots.index(EMPTY)
+    except ValueError:
+        pass  # All slots filled.
+    else:
+        # Fill remaining values with defaults, in reverse (there may be
+        # missing positional arguments we don't want to provide defaults for).
+        for j, default in enumerate(reversed(callee.defaults), start=1):
+            if slots[-j] is EMPTY:
+                slots[-j] = default
+
+    # Check for any empty values, indicating some positional arguments were missing.
+    try:
+        slots.index(EMPTY)
+    except ValueError:
+        pass  # All slots filled.
+    else:
+        missing = [p for i, p in enumerate(callee.parameters) if slots[i] is EMPTY]
+        missinglist = ", ".join(repr(m) for m in missing)
+        plural = "" if len(missing) == 1 else "s"
+        raise EvalError(
+            token,
+            f"missing {len(missing)} positional argument{plural}: {missinglist}",
+        )
+
+    assert len(callee.parameters) == len(slots)
+
+    return slots
 
 
 def check_number_operand(op: Token, value: Any) -> None:

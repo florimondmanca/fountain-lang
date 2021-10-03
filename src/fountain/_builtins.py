@@ -6,25 +6,25 @@ from ._interpreter import Interpreter, stringify
 
 
 class Clock(FunctionType):
-    def arity(self) -> int:
-        return 0
+    parameters: list[str] = []
+    defaults: list[str] = []
 
     def call(self, interpreter: Interpreter, *arguments: Any) -> Any:
         return time.time()
 
-    def str(self) -> str:
+    def __str__(self) -> str:
         return "<built-in function clock>"
 
 
 class Print(FunctionType):
-    def arity(self) -> int:
-        return 1
+    parameters = ["value"]
+    defaults = [""]
 
     def call(self, interpreter: Interpreter, *arguments: Any) -> Any:
         (value,) = arguments
         print(stringify(value))
 
-    def str(self) -> str:
+    def __str__(self) -> str:
         return "<built-in function print>"
 
 
