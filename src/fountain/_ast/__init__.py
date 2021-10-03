@@ -21,6 +21,7 @@ from .nodes import (
     Variable,
 )
 from .parse import parse
+from .resolve import resolve
 from .tokens import Token, TokenType, tokenize
 from .visitor import NodeVisitor
 
@@ -44,6 +45,7 @@ __all__ = [
     "Unary",
     "Variable",
     "parse",
+    "resolve",
     "Return",
     "Stmt",
     "Token",

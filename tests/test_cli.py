@@ -194,6 +194,34 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
             "9\n",
             id="function-all-kwargs",
         ),
+        pytest.param(
+            """
+            x = 1
+            fn f()
+                return x
+            end
+            print(f())
+            x = 2
+            print(f())
+            """,
+            "1\n2\n",
+            id="resolve-function-globals",
+        ),
+        pytest.param(
+            """
+            x = 1
+            do
+                fn f()
+                    return x
+                end
+                print(f())
+                x = 2
+                print(f())
+            end
+            """,
+            "1\n1\n",
+            id="resolve-block-globals",
+        ),
         ("assert true", ""),
         ("-- Comment", ""),
         ("", ""),

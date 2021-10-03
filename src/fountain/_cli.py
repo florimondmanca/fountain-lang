@@ -3,7 +3,7 @@ import pathlib
 import sys
 from typing import Any
 
-from ._ast import parse, tokenize
+from ._ast import parse, resolve, tokenize
 from ._exceptions import EvalError, ParseErrors, TokenizeErrors
 from ._interpreter import Interpreter, stringify
 
@@ -48,6 +48,8 @@ class CLI:
                 where = "at end" if p_exc.at_eof else f"at {p_exc.token.lexeme!r}"
                 self._report(p_exc.message, lineno=p_exc.token.lineno, where=where)
             raise
+
+        resolve(self._interpreter, statements)
 
         try:
             return self._interpreter.interpret(statements)
