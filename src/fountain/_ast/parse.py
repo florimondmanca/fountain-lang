@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from .._exceptions import ParseError, ParseErrors
 from .nodes import (
     Assert,
@@ -26,30 +24,24 @@ from .nodes import (
 from .tokens import Token, TokenType
 
 
-@dataclass
-class State:
-    current = 0
-    inside_loop = False
-    inside_function = False
-
-
 def parse(tokens: list[Token]) -> list[Stmt]:
-    state = State()
+    current = 0
 
     # Helpers.
 
     def peek() -> Token:
-        return tokens[state.current]
+        return tokens[current]
 
     def previous() -> Token:
-        return tokens[state.current - 1]
+        return tokens[current - 1]
 
     def done() -> bool:
         return peek().type == TokenType.EOF
 
     def movenext() -> None:
+        nonlocal current
         if not done():
-            state.current += 1
+            current += 1
 
     def check(t: TokenType) -> bool:
         if done():
@@ -133,9 +125,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         return If(test, body, orelse)
 
     def for_statement() -> Stmt:
-        prev = state.inside_loop
-        state.inside_loop = True
-
         consume(TokenType.DO, "expected 'do' after 'for'")
 
         body = []
@@ -144,24 +133,15 @@ def parse(tokens: list[Token]) -> list[Stmt]:
 
         consume(TokenType.END, "expected 'end' to close 'for'")
 
-        state.inside_loop = prev
-
         return For(body)
 
     def break_statement() -> Stmt:
-        if not state.inside_loop:
-            raise ParseError(previous(), "break outside loop")
         return Break(previous())
 
     def continue_statement() -> Stmt:
-        if not state.inside_loop:
-            raise ParseError(previous(), "continue outside loop")
         return Continue(previous())
 
     def function_statement() -> Stmt:
-        prev = state.inside_function
-        state.inside_function = True
-
         name = consume(TokenType.IDENTIFIER, "expected function name")
 
         consume(TokenType.LEFT_PARENS, "expected '(' after function name")
@@ -200,15 +180,12 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             body.append(statement())
         consume(TokenType.END, "expected 'end' to close function")
 
-        state.inside_function = prev
-
         return Function(name, parameters, defaults, body)
 
     def return_statement() -> Stmt:
-        if not state.inside_function:
-            raise ParseError(previous(), "return outside function")
-        expr = None if check(TokenType.END) else expression()
-        return Return(previous(), expr)
+        token = previous()
+        expr = None if done() or match(TokenType.END) else expression()
+        return Return(token, expr)
 
     def assert_statement() -> Stmt:
         op = previous()
@@ -373,10 +350,6 @@ def parse(tokens: list[Token]) -> list[Stmt]:
         raise ParseError(peek(), "expected expression")
 
     def synchronize() -> None:
-        # Clear up any contextual state.
-        state.inside_loop = False
-        state.inside_function = False
-
         # Discard next tokens until we hit the beginning of the next statement.
         while True:
             movenext()
@@ -393,8 +366,10 @@ def parse(tokens: list[Token]) -> list[Stmt]:
             if peek().type in (
                 TokenType.IDENTIFIER,  # x = ..., f()
                 TokenType.DO,
-                TokenType.FOR,
                 TokenType.IF,
+                TokenType.FOR,
+                TokenType.BREAK,
+                TokenType.CONTINUE,
                 TokenType.FN,
                 TokenType.RETURN,
                 TokenType.ASSERT,

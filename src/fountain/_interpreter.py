@@ -10,6 +10,7 @@ from ._ast import (
     Conjunction,
     Continue,
     Disjunction,
+    Expr,
     Expression,
     For,
     Function,
@@ -38,7 +39,10 @@ class Interpreter(NodeVisitor[Any]):
         scope = Scope()
         for name, value in BUILTINS:
             scope.assign(name, value)
+
+        self._globals = scope
         self._scope = scope
+        self._locals: dict[Expr, int] = {}  # {variable: scope depth, ...}
 
     def interpret(self, statements: list[Stmt]) -> Any:
         value: Any = None
@@ -49,6 +53,9 @@ class Interpreter(NodeVisitor[Any]):
             raise
         else:
             return value
+
+    def on_resolve(self, expr: Expr, depth: int) -> None:
+        self._locals[expr] = depth
 
     #
     # Statements.
@@ -218,7 +225,10 @@ class Interpreter(NodeVisitor[Any]):
         return self.evaluate(expr.expression)
 
     def evaluate_Variable(self, expr: Variable) -> Any:
-        return self._scope.get(expr.name)
+        depth = self._locals.get(expr)
+        if depth is not None:
+            return self._scope.get_at(depth, expr.name)
+        return self._globals.get(expr.name)
 
 
 class Empty:

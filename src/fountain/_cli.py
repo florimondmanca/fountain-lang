@@ -3,7 +3,7 @@ import pathlib
 import sys
 from typing import Any
 
-from ._ast import parse, tokenize
+from ._ast import parse, resolve, tokenize
 from ._exceptions import EvalError, ParseErrors, TokenizeErrors
 from ._interpreter import Interpreter, stringify
 
@@ -43,6 +43,7 @@ class CLI:
 
         try:
             statements = parse(tokens)
+            resolve(self._interpreter, statements)
         except ParseErrors as exc:
             for p_exc in exc.errors:
                 where = "at end" if p_exc.at_eof else f"at {p_exc.token.lexeme!r}"
