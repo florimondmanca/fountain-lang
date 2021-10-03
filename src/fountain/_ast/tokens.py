@@ -168,7 +168,7 @@ def tokenize(source: str) -> list[Token]:
         add_token(TokenType.NUMBER, value=value)
 
     def readidentifier() -> None:
-        while peek().isalnum():
+        while (c := peek()).isalnum() or c == "_":
             readnext()
 
         text = source[start:current]

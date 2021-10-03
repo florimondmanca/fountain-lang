@@ -67,6 +67,16 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
             """,
             "3\n5\n",
         ),
+        pytest.param(
+            """
+            _two = 2
+            print(_two)
+            the_three = 3
+            print(the_three)
+            """,
+            "2\n3\n",
+            id="identifier-underscore",
+        ),
         ("do end", ""),
         ("x = 0; do x = 1; print(x); end; print(x)", "1\n0\n"),
         (
