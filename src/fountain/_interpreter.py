@@ -24,7 +24,7 @@ from ._ast import (
     Unary,
     Variable,
 )
-from ._exceptions import BreakExc, ContinueExc, EvalError, ReturnExc
+from ._exceptions import Broke, Continued, EvalError, Returned
 from ._functions import FunctionType, UserFunction
 from ._scope import Scope
 
@@ -73,20 +73,20 @@ class Interpreter(NodeVisitor[Any]):
                 for s in stmt.body:
                     try:
                         self.execute(s)
-                    except ContinueExc:
+                    except Continued:
                         break
-            except BreakExc:
+            except Broke:
                 break
 
     def execute_Break(self, stmt: Break) -> None:
-        raise BreakExc()
+        raise Broke()
 
     def execute_Continue(self, stmt: Continue) -> None:
-        raise ContinueExc()
+        raise Continued()
 
     def execute_Return(self, stmt: Return) -> None:
         value = self.evaluate(stmt.expr) if stmt.expr is not None else None
-        raise ReturnExc(value)
+        raise Returned(value)
 
     def execute_Assert(self, stmt: Assert) -> None:
         test = self.evaluate(stmt.test)

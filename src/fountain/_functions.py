@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from ._ast import Function
-from ._exceptions import ReturnExc
+from ._exceptions import Returned
 from ._scope import Scope
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ class UserFunction(FunctionType):
 
         try:
             interpreter.execute_scoped(self._stmt.body, scope)
-        except ReturnExc as exc:
+        except Returned as exc:
             return exc.value
         else:
             return None
