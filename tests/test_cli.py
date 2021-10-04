@@ -25,6 +25,7 @@ def test_cli_repl(monkeypatch: Any, capsys: Any) -> None:
         ("print(2 * (5-3.6))", "2.8\n"),
         ("print(3/4)", "0.75\n"),
         ("print('he' + 'llo')", "hello\n"),
+        ("print(1 + true)", "2\n"),
         ("print(true and true)", "true\n"),
         ("print(true and false)", "false\n"),
         ("print(true or false)", "true\n"),
@@ -398,13 +399,28 @@ def test_cli_eval(source: str, result: str, capsys: Any) -> None:
             70,
         ),
         (
-            "1 + true",
-            "[line 1] error: at '+': right operand must be a number\n",
+            "true - 'hello'",
+            "[line 1] error: at '-': unsupported operand type(s) for '-': 'bool', 'string'\n",  # noqa
+            70,
+        ),
+        (
+            "fn f() end; f + 1",
+            "[line 1] error: at '+': unsupported operand type(s) for '+': 'function', 'number'\n",  # noqa
             70,
         ),
         (
             "'hello' + 1",
-            "[line 1] error: at '+': can only concatenate str to str\n",
+            "[line 1] error: at '+': unsupported operand type(s) for '+': 'string', 'number'\n",  # noqa
+            70,
+        ),
+        (
+            "'hello' < 1",
+            "[line 1] error: at '<': unsupported operand type(s) for '<': 'string', 'number'\n",  # noqa
+            70,
+        ),
+        (
+            "-'hello'",
+            "[line 1] error: at '-': unsupported operand type(s) for '-': 'string'\n",
             70,
         ),
         (

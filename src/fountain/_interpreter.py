@@ -1,4 +1,5 @@
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Iterator, Type
 
 from ._ast import (
     Assert,
@@ -27,7 +28,7 @@ from ._ast import (
 )
 from ._environment import Environment
 from ._exceptions import Broke, Continued, EvalError, Returned
-from ._functions import FunctionType, UserFunction
+from ._types import FunctionType, UserFunction
 
 __all__ = ["Interpreter"]
 
@@ -161,36 +162,39 @@ class Interpreter(NodeVisitor[Any]):
         right = self.evaluate(expr.right)
 
         if expr.op.type == TokenType.PLUS:
-            check_add_operands(expr.op, left, right)
-            return left + right
+            with check_operands(expr.op, (TypeError, ValueError), left, right):
+                return left + right
 
         if expr.op.type == TokenType.MINUS:
-            check_number_operands(expr.op, left, right)
-            return left - right
+            with check_operands(expr.op, (TypeError, ValueError), left, right):
+                return left - right
 
         if expr.op.type == TokenType.STAR:
-            check_number_operands(expr.op, left, right)
-            return left * right
+            with check_operands(expr.op, (TypeError, ValueError), left, right):
+                return left * right
 
         if expr.op.type == TokenType.SLASH:
-            check_number_operands(expr.op, left, right)
-            return left / right
+            with check_operands(expr.op, (TypeError, ValueError), left, right):
+                try:
+                    return left / right
+                except ZeroDivisionError:
+                    raise EvalError(expr.op, "division by zero")
 
         if expr.op.type == TokenType.GREATER:
-            check_number_operands(expr.op, left, right)
-            return left > right
+            with check_operands(expr.op, (TypeError,), left, right):
+                return left > right
 
         if expr.op.type == TokenType.GREATER_EQUAL:
-            check_number_operands(expr.op, left, right)
-            return left >= right
+            with check_operands(expr.op, (TypeError,), left, right):
+                return left >= right
 
         if expr.op.type == TokenType.LESS:
-            check_number_operands(expr.op, left, right)
-            return left < right
+            with check_operands(expr.op, (TypeError,), left, right):
+                return left < right
 
         if expr.op.type == TokenType.LESS_EQUAL:
-            check_number_operands(expr.op, left, right)
-            return left <= right
+            with check_operands(expr.op, (TypeError,), left, right):
+                return left <= right
 
         if expr.op.type == TokenType.EQUAL_EQUAL:
             return left == right
@@ -202,8 +206,8 @@ class Interpreter(NodeVisitor[Any]):
         right = self.evaluate(expr.right)
 
         if expr.op.type == TokenType.MINUS:
-            check_number_operand(expr.op, right)
-            return -right
+            with check_operands(expr.op, (TypeError,), right):
+                return -right
 
         assert expr.op.type == TokenType.NOT
         return not is_truthy(right)
@@ -306,30 +310,16 @@ def bind_arguments(
     return slots
 
 
-def check_number_operand(op: Token, value: Any) -> None:
-    if not isinstance(value, float):
-        raise EvalError(op, "operand must be a number")
-
-
-def check_add_operands(op: Token, left: Any, right: Any) -> None:
-    if isinstance(left, float):
-        check_number_operands(op, left, right)
-        return
-
-    if isinstance(left, str):
-        if not isinstance(right, str):
-            raise EvalError(op, "can only concatenate str to str")
-
-
-def check_number_operands(op: Token, left: Any, right: Any) -> None:
-    if not isinstance(left, float):
-        raise EvalError(op, "left operand must be a number")
-
-    if not isinstance(right, float):
-        raise EvalError(op, "right operand must be a number")
-
-    if op.type == TokenType.SLASH and right == 0:
-        raise EvalError(op, "division by zero")
+@contextmanager
+def check_operands(
+    op: Token, exc_classes: tuple[Type[Exception], ...], *operands: Any
+) -> Iterator[None]:
+    try:
+        yield
+    except exc_classes:
+        typelist = ", ".join(repr(typeify(operand)) for operand in operands)
+        message = f"unsupported operand type(s) for {op.lexeme!r}: {typelist}"
+        raise EvalError(op, message)
 
 
 def stringify(value: Any) -> str:
@@ -349,6 +339,20 @@ def stringify(value: Any) -> str:
         return text
 
     return str(value)
+
+
+def typeify(value: Any) -> str:
+    if value is None:
+        return "nil"
+    if isinstance(value, bool):
+        return "bool"
+    if isinstance(value, (float, int)):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, FunctionType):
+        return "function"
+    raise NotImplementedError(f"Unknown type: {type(value)}")
 
 
 def is_truthy(value: Any) -> bool:

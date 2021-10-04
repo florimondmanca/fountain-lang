@@ -1,8 +1,8 @@
 import time
 from typing import Any
 
-from ._functions import FunctionType
 from ._interpreter import stringify
+from ._types import FunctionType
 
 
 class Clock(FunctionType):
