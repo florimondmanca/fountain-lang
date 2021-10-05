@@ -98,3 +98,5 @@ primary:
 - On avoiding semicolons: [How Lua avoids semicolons](https://www.seventeencups.net/posts/how-lua-avoids-semicolons/)
 - [Lua grammar reference](http://lua-users.org/wiki/LuaGrammar)
 - [Python grammar reference](https://docs.python.org/3/reference/grammar.html)
+- [Pinecone](https://github.com/wmww/Pinecone) | [I wrote a programming language: Here's how you can, too](https://www.freecodecamp.org/news/the-programming-language-pipeline-91d3f449c919/)
+- [Create your own programming language with Rust](https://createlang.rs/)
